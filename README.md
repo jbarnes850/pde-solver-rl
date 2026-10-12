@@ -1,4 +1,4 @@
-# Training language models to write reliable PDE solvers with a physics verifier
+# Training language models to write reliable physics simulations with reinforcement learning
 
 Code for training Qwen3.5-9B with reinforcement learning against a physics verifier to write numerical solvers for
 partial differential equations (PDEs).
@@ -272,7 +272,7 @@ campaign directory, which is not included.
 
 ```bibtex
 @misc{barnes2026pdesolver,
-  title  = {Training language models to write reliable PDE solvers with a physics verifier},
+  title  = {Training language models to write reliable physics simulations with reinforcement learning},
   author = {Barnes, Jarrod},
   year   = {2026},
   url    = {https://jbarnes850.github.io}
