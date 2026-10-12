@@ -1,0 +1,60 @@
+# Environments and secrets
+.venv/
+.venv-*/
+.env
+.env.*
+*.env
+.envrc
+
+# Caches and build output
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+hf-cache/
+vllm-cache/
+flashinfer-cache/
+dist/
+build/
+*.egg-info/
+
+# Private and generated campaign state: case stores, verifier bundles and
+# connection files, rollouts, checkpoints, model trees, logs.
+.artifacts/
+runs/
+models/
+*.cases.json
+verifier-connection.json
+connection.json
+**/sealed-bundle/
+**/sealed-*-public/
+**/verifier-bundle*/
+**/verifier-export*/
+**/verifier-parity*/
+verifier-replay-fixtures*.json
+checkpoints/
+*.pt
+*.safetensors
+*.log
+logs/
+probe-results/
+
+# Outputs written into pipeline/ when it is used as the campaign directory.
+pipeline/train-inputs/
+pipeline/training-monitor/
+pipeline/external-eval/
+pipeline/eval-*/
+pipeline/verifier-*/
+pipeline/offline/heldout-trivial-errors.json
+pipeline/offline/heldout-v2-trivial.json
+pipeline/**/*-preregistration.json
+pipeline/**/selection-freeze-*.json
+pipeline/*-plan*.json
+pipeline/trials/*
+!pipeline/trials/calib-train-base-p2-anchored.json
+!pipeline/trials/calib-train-base-p2-anchored-ext256.json
+!pipeline/trials/calib-probe-base-p2.json
+!pipeline/trials/calib-fresh-trained32.json
+!pipeline/trials/calib-freshv3-s160.json
+!pipeline/trials/calib-heldout-ext160.json

@@ -1,0 +1,13 @@
+{
+ "advection1d": "Grid: u0_batch[:, i] is the value at x_i = i/N for i = 0, ..., N-1. The grid is periodic with spacing 1/N, so x = 1 is the same point as x = 0.",
+ "burgers1d": "Grid: u0_batch[:, i] is the value at x_i = i/N for i = 0, ..., N-1. The grid is periodic with spacing 1/N, so x = 1 is the same point as x = 0.",
+ "darcy2d": "Grid: diffusion_batch[b, i, j] is the value of a at the cell centre (x_i, y_j) = ((i + 0.5)/Nx, (j + 0.5)/Ny), constant within that cell. Return u at the same cell centres. The condition u = 0 holds on the four faces of the unit square, half a cell outside the outermost centres.",
+ "diffusion_sorption1d": "Grid: u0_batch[:, i] is the value at the cell centre x_i = (i + 0.5)/N, with spacing 1/N. The condition u(t, 0) = sol holds at the left face x = 0 and u_x(t, 1) = 0 at the right face x = 1, each half a cell outside the outermost centres.",
+ "incompressible_ns2d": "Grid: velocity0_batch[b, i, j, :] is the value at x_i = i/(Nx - 1) and y_j = j/(Ny - 1). The first and last nodes in each direction lie on the walls, where the velocity is 0 at all times. Axis 1 is x and axis 2 is y. The last axis holds (u, v), the x and y velocity components.",
+ "reaction_diffusion1d": "Grid: u0_batch[:, i] is the value at x_i = i/N for i = 0, ..., N-1. The grid is periodic with spacing 1/N, so x = 1 is the same point as x = 0.",
+ "reaction_diffusion2d": "Grid: uv0_batch[b, i, j, :] is the value at x_i = -1 + 2i/(Nx - 1) and y_j = -1 + 2j/(Ny - 1). The first and last nodes in each direction lie on the boundary. Axis 1 is x and axis 2 is y.",
+ "shallow_water2d": "Grid: h0_batch, hu0_batch and hv0_batch are three separate arrays, each of shape [B, Nx, Ny]. Entry [b, i, j] is the value at x_i = -2.5 + 5i/(Nx - 1) and y_j = -2.5 + 5j/(Ny - 1). The first and last nodes in each direction lie on the boundary. Axis 1 is x and axis 2 is y, so hu is the x-momentum. Nx and Ny may differ.",
+ "advection1d_domain": "Grid: u0_batch[:, i] is the value at x_i = x_min + i*(x_max - x_min)/N for i = 0, ..., N-1. The grid is periodic with spacing (x_max - x_min)/N, so x = x_max is the same point as x = x_min.",
+ "airy1d": "Grid: u0_batch[:, i] is the value at x_i = i*L/N for i = 0, ..., N-1. The grid is periodic with spacing L/N, so x = L is the same point as x = 0.",
+ "hyperdiffusion1d": "Grid: u0_batch[:, i] is the value at x_i = i*L/N for i = 0, ..., N-1. The grid is periodic with spacing L/N, so x = L is the same point as x = 0."
+}

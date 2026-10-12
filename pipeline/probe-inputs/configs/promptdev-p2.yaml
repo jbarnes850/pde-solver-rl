@@ -1,0 +1,70 @@
+id: rlvp-calib-20261010-promptdev-p2
+model:
+  name: Qwen/Qwen3.5-9B
+  tree_manifest_sha256: 37048cc496c8992ea778fc1395f10b3c1d2dcb434f5de066f9f5c4bbf832903a
+  tokenizer_json_sha256: 5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42
+algorithm:
+  name: grpo
+  advantage: grpo
+  kl_penalty: 0.001
+  normalize_rewards: true
+  use_leave_one_out_baseline: false
+  dynamic_sampling: false
+  reward_shaping: false
+reward:
+  trajectory_normalization: reference_range
+  trajectory_temperature: 0.05
+  residual_temperature: 2.0
+  epsilon: 1.0e-12
+rollout:
+  generations_per_prompt: 8
+  max_new_tokens: 9216
+  temperature: 0.7
+  top_p: 1.0
+  top_k: null
+  enable_thinking: false
+  system_prompt: "You write numerical PDE solver code.\nReturn only Python code. Do not use Markdown fences. Do not print. Do not use files,\nthe network, subprocesses, or environment variables. NumPy and\
+    \ SciPy are allowed.\nThe verifier will call the exact function signature in the user request.\n\nHow the code runs:\n- The module is imported once and solver(...) is called once, with positional arguments\n\
+    \  in the order of the signature. Array arguments are float64 NumPy arrays. Scalar\n  parameters are Python floats.\n- Python 3.12 with NumPy 2.5 and SciPy 1.17 only, two CPU cores, 4 GB of memory and\
+    \ a\n  30-second limit. Use only functions that exist in these versions. For example,\n  scipy.integrate.solve_ivp accepts only the methods RK45, RK23, DOP853, Radau, BDF\n  and LSODA.\n- The batch\
+    \ size B and the grid sizes change between calls, and Nx may differ from Ny.\n  Read every size from the input arrays. Do not check, assert or reject input shapes\n  or values.\n\nWhat to return:\n\
+    - One finite float64 NumPy array with exactly the shape stated in the request.\n- For time-dependent problems, t_coordinate[0] is 0 and output index 0 is the initial\n  state. Take substeps sized by\
+    \ a stability limit and land exactly on every requested\n  output time.\n\nHow to write it:\n- One complete module: imports, any helper functions, then a module-level\n  def solver(...) with exactly\
+    \ the requested name and arguments. Define every\n  variable before using it.\n- Write one clear, vectorized implementation. Do not include alternative versions,\n  drafts, tests, example usage or explanations\
+    \ outside comments."
+execution:
+  workers: 8
+  model_timeout_seconds: 900
+  verifier_timeout_seconds: 900
+  transport_retries: 0
+  case_concurrency: 8
+runtime:
+  image_ref: local/nemo-rl-main-cu132:c236061b
+  image_digest: sha256:b0f8dd966dec1efd0d15b9d6732c611ad4f1f1499a6ec29e37b1eb86259e871d
+  vllm_version: 0.20.0
+  batch_invariance_enabled: false
+  tensor_parallel_size: 1
+  quantization: fp8
+  gpu_memory_utilization: 0.35
+  max_model_len: 9728
+  max_num_batched_tokens: 4096
+  max_num_seqs: 8
+  prefix_caching_enabled: true
+  chunked_prefill_enabled: true
+  mamba_cache_mode: align
+  seed: 17
+evaluation:
+  manifest_role: prompt_dev
+  attempt_indices:
+  - 0
+  resampling_policy: none
+  selection_policy: none
+  max_transport_repaired_fraction: 0.0
+  seed_namespace: rlvp-calib-20261010-promptdev-v1
+  reward_arms:
+  - validity
+  - trajectory
+  - full
+  cross_host_output_equality: diagnostic
+  minimum_aggregate_saved_output_tokens_per_second: 0.0
+  seed_manifest_sha256: 8c6f5aa15e62ce1089d42b156b3c54bc78be0f388437919139b16c9ab8766c7c

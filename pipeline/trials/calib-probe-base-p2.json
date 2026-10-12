@@ -1,0 +1,33 @@
+{
+  "accounted_hourly_rate": 17.6,
+  "algorithm_overrides": {
+    "++loss_fn.rlvp_fixed_response_tokens": 0,
+    "grpo.normalize_rewards": true,
+    "grpo.use_leave_one_out_baseline": false,
+    "loss_fn.ratio_clip_c": null,
+    "loss_fn.ratio_clip_max": 4.0,
+    "loss_fn.ratio_clip_min": 1.0,
+    "loss_fn.sequence_level_importance_ratios": false,
+    "loss_fn.token_level_loss": true,
+    "loss_fn.use_cispo": true,
+    "loss_fn.use_importance_sampling_correction": true,
+    "loss_fn.use_on_policy_kl_approximation": false
+  },
+  "case_store_sha256": "006d976b39492efa013a3cadea94936497556fc9d6e5e741c41fd57fc56cadcf",
+  "concurrency": 64,
+  "evaluation_config": "/inputs/calib-20261010/configs/promptdev-p2.yaml",
+  "evaluation_manifest": "/inputs/calib-20261010/manifests/prompt-dev-p2.jsonl",
+  "full_length_backward_probe": false,
+  "learning_rate": 2e-06,
+  "manifest_path": "/inputs/public-inputs/manifests/train-ordered.jsonl",
+  "max_estimated_dollars": 13.2,
+  "max_seconds": 2700,
+  "mode": "evaluate",
+  "model_tree_sha256": "37048cc496c8992ea778fc1395f10b3c1d2dcb434f5de066f9f5c4bbf832903a",
+  "resume_checkpoint": "/runs/calib-20261010-base-zero-delta/step_0",
+  "run_id": "calib-probe-base-p2",
+  "schedule_path": "/inputs/public-inputs/manifests/schedule.jsonl",
+  "solver_image_digest": "sha256:1ad96011b4210e0b20fe58724c0efe705906aa23501469c35f3c6dcb482c13ee",
+  "steps": 1,
+  "weight_version": 0
+}

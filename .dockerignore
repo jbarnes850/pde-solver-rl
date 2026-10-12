@@ -1,0 +1,13 @@
+.artifacts
+.git
+.pytest_cache
+.ruff_cache
+.venv
+.venv-*
+.env*
+*.cases.json
+__pycache__
+*.pyc
+pipeline
+tests
+uv.lock

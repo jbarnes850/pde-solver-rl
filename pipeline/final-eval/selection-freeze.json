@@ -1,0 +1,18 @@
+{
+ "baseline_checkpoint_tree_sha256": "785ad6c5fa4cf19158312600aa933d9737ef281e53138626c565c920b30fadd5",
+ "decision_target": ">= +2.0 pp, one-sided case-paired sign-flip p<=0.05, validity drop <= 2 pp",
+ "evaluation_contract_sha256": "15a5ebbc63e6a71ea0136206c8e59d47eb723bf3f537dc4aefacf23b3a770f4e",
+ "frozen_unix": 1791669505.3541179,
+ "frozen_utc": "2026-10-10T21:58:25.354118+00:00",
+ "primary_metric": "six-family equal-weight strict pass@1 (trained minus base), 48 cases/family x 8 responses; sorption 3 cases descriptive",
+ "private_case_store_sha256": "25e910b44754e90bd5b4e8020e593ab70ee4387d2dd3cf2b815b0554ace36c72",
+ "public_manifest_sha256": "b1220d5f96cce5b937038b54a1013a76a86b209c83aab9ecefbef7ebcecb9bab",
+ "schema": "rlvp.selected-policy-freeze.v2",
+ "sealed_case_count": 291,
+ "sealed_role": "rl_fresh_test_20261010",
+ "selected_checkpoint_tree_sha256": "f475ac8b4f366a4b6700c8c16fcbacbc5f0ef67b87baf76be848db6ad2fe2a51",
+ "selection_evidence_sha256": "7dfba1905b7911ae370db6ae4f2ed13bfa8cf27e9ef85d297404705bb36962fa",
+ "statistics_method": "primary: one-sided case-paired sign-flip test on per-case strict-rate differences (trained minus start) over the confirmatory six families, equal family weights via per-family mean then average; exact enumeration if <=24 nonzero cases else 2,000,000 Monte Carlo flips with seed 20261010; descriptive 95% family-stratified case bootstrap interval (10,000 draws)",
+ "test_unopened_at_freeze": true,
+ "verifier_source_tree_sha256": "d6a57690f156d0e6aea976145fda62366b29052cc08bd237d630f585f86890b0"
+}

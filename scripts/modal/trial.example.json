@@ -1,0 +1,25 @@
+{
+  "run_id": "cispo-2e6-proof-v1",
+  "mode": "train",
+  "manifest_path": "/inputs/public-inputs/manifests/train-ordered.jsonl",
+  "schedule_path": "/inputs/public-inputs/manifests/schedule.jsonl",
+  "steps": 1,
+  "concurrency": 8,
+  "learning_rate": 0.000002,
+  "full_length_backward_probe": true,
+  "max_seconds": 7200,
+  "max_estimated_dollars": 35,
+  "accounted_hourly_rate": 17.60,
+  "algorithm_overrides": {
+    "loss_fn.use_cispo": true,
+    "loss_fn.token_level_loss": true,
+    "loss_fn.ratio_clip_min": 1,
+    "loss_fn.ratio_clip_max": 4,
+    "loss_fn.ratio_clip_c": null,
+    "loss_fn.use_importance_sampling_correction": true,
+    "loss_fn.use_on_policy_kl_approximation": false,
+    "grpo.normalize_rewards": true,
+    "grpo.use_leave_one_out_baseline": false,
+    "++loss_fn.rlvp_fixed_response_tokens": 0
+  }
+}

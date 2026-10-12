@@ -1,0 +1,5 @@
+{
+ "advection1d_domain": "Grid: u0_batch[:, i] is the value at x_i = x_min + i*(x_max - x_min)/N for i = 0, ..., N-1. The grid is periodic with spacing (x_max - x_min)/N, so x = x_max is the same point as x = x_min.",
+ "airy1d": "Grid: u0_batch[:, i] is the value at x_i = i*L/N for i = 0, ..., N-1. The grid is periodic with spacing L/N, so x = L is the same point as x = 0.",
+ "hyperdiffusion1d": "Grid: u0_batch[:, i] is the value at x_i = i*L/N for i = 0, ..., N-1. The grid is periodic with spacing L/N, so x = L is the same point as x = 0."
+}

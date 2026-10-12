@@ -1,0 +1,16 @@
+{
+ "baseline_checkpoint_tree_sha256": "785ad6c5fa4cf19158312600aa933d9737ef281e53138626c565c920b30fadd5",
+ "evaluation_contract_sha256": "c4d703556efc0d5f2bc589550b76b583717d49e9503d56f8ab8ceafa14036ba7",
+ "frozen_unix": 1791675081.2506192,
+ "frozen_utc": "2026-10-10T23:31:21.250620+00:00",
+ "label": "exploratory transfer",
+ "private_case_store_sha256": "622b8c59c2dda544af66e6abb7f9fe43cc11f1e3f1a2f7c83328ced0ec1eff93",
+ "public_manifest_sha256": "60368ed3bdecbd33e99c0e64fb512e8cffadd03fa2b36faa91a644f23f5b9281",
+ "schema": "rlvp.selected-policy-freeze.v2",
+ "sealed_case_count": 137,
+ "sealed_role": "held_out_evaluation",
+ "selected_checkpoint_tree_sha256": "f475ac8b4f366a4b6700c8c16fcbacbc5f0ef67b87baf76be848db6ad2fe2a51",
+ "selection_evidence_sha256": "5e4121c58dafa253f2e9e61195a64fbd1705dfcbac434f76a84b66e4d895e40c",
+ "test_unopened_at_freeze": true,
+ "verifier_source_tree_sha256": "d6a57690f156d0e6aea976145fda62366b29052cc08bd237d630f585f86890b0"
+}
