@@ -1,4 +1,4 @@
-# What reinforcement learning really teaches a physics solver
+# Training language models to write reliable PDE solvers with a physics verifier
 
 Code for training Qwen3.5-9B with reinforcement learning against a physics verifier to write numerical solvers for
 partial differential equations (PDEs).
@@ -271,8 +271,8 @@ campaign directory, which is not included.
 ## Citation
 
 ```bibtex
-@misc{barnes2026physicssolver,
-  title  = {What reinforcement learning really teaches a physics solver},
+@misc{barnes2026pdesolver,
+  title  = {Training language models to write reliable PDE solvers with a physics verifier},
   author = {Barnes, Jarrod},
   year   = {2026},
   url    = {https://jbarnes850.github.io}
