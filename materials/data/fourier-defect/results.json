@@ -1,0 +1,595 @@
+{
+  "scope": "Verify an opt-in real-spectrum correction before any processing use.\n\nProjection geometry, frozen-default preservation, short noisy M1/M2 composition,\nand a long deterministic/noisy counterexample. No stochastic route convergence.\n",
+  "device": "cpu",
+  "skip_long": false,
+  "hashes": {
+    "reference_etd.py": "17a8920e8271fd39f5a9139b13361cf4150ccb5081b3751e7bce36553858d727",
+    "reference_etd_frozen.py": "e92ebc50b0acbdcb1240e4ab02a737c27b28422961ff2929760de7b797ed97d6"
+  },
+  "rubric": "Projection preserves irfft real fields and zero mode to 1e-12 for odd/even shapes, is idempotent, and matches rfft(irfft) to 1e-12. Default matches frozen source bitwise. Corrected short M1/M2 noisy trajectories differ by <1e-10, mass drift <1e-12. All long branches retained, including failures; no route claim.",
+  "geometry": [
+    {
+      "shape": [
+        8,
+        8
+      ],
+      "field": 5.551115123125783e-17,
+      "roundtrip": 4.47545209131181e-16,
+      "idempotence": 0.0,
+      "zero_mode": 0.0
+    },
+    {
+      "shape": [
+        9,
+        7
+      ],
+      "field": 2.7755575615628914e-17,
+      "roundtrip": 9.42055475210265e-16,
+      "idempotence": 0.0,
+      "zero_mode": 0.0
+    },
+    {
+      "shape": [
+        8,
+        9
+      ],
+      "field": 2.7755575615628914e-17,
+      "roundtrip": 1.1102230246251565e-15,
+      "idempotence": 0.0,
+      "zero_mode": 0.0
+    },
+    {
+      "shape": [
+        9,
+        8
+      ],
+      "field": 5.551115123125783e-17,
+      "roundtrip": 9.930136612989092e-16,
+      "idempotence": 0.0,
+      "zero_mode": 0.0
+    },
+    {
+      "shape": [
+        48,
+        48
+      ],
+      "field": 1.3877787807814457e-17,
+      "roundtrip": 2.531698018113677e-15,
+      "idempotence": 0.0,
+      "zero_mode": 0.0
+    }
+  ],
+  "short": [
+    {
+      "case": 0,
+      "default_bitwise": true,
+      "max_corrected_difference": 2.220446049250313e-16,
+      "mass_drift": 5.551115123125783e-17
+    },
+    {
+      "case": 1,
+      "default_bitwise": true,
+      "max_corrected_difference": 2.220446049250313e-16,
+      "mass_drift": 5.551115123125783e-17
+    },
+    {
+      "case": 2,
+      "default_bitwise": true,
+      "max_corrected_difference": 2.220446049250313e-16,
+      "mass_drift": 0.0
+    },
+    {
+      "case": 3,
+      "default_bitwise": true,
+      "max_corrected_difference": 2.220446049250313e-16,
+      "mass_drift": 5.551115123125783e-17
+    },
+    {
+      "case": 4,
+      "default_bitwise": true,
+      "max_corrected_difference": 3.3306690738754696e-16,
+      "mass_drift": 0.0
+    }
+  ],
+  "long": [
+    {
+      "noise": false,
+      "corrected": false,
+      "eps_th": 0.0,
+      "h_max": 0.25,
+      "failed": "FloatingPointError('Invalid composition at t=4825.5; no noisy step was resampled')",
+      "failure": [
+        {
+          "time": 4825.5,
+          "step": 0.25,
+          "steps": 19302,
+          "invalid_members": [
+            0
+          ],
+          "before_hermitian_error": 1.01836630473403e+17,
+          "after_hermitian_error": 1.0224681436796218e+17,
+          "before_min": 0.12397964806437449,
+          "before_max": 0.9928047569063676,
+          "after_min": 0.1304786293329243,
+          "after_max": 1.0320510818808075
+        }
+      ],
+      "wall_s": 2.0487635990139097,
+      "trace": [
+        {
+          "steps": 2000,
+          "time": 500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.28706269796383516,
+          "max_composition": 0.7118160904877086,
+          "hermitian_error": 9.326296339365846e-14
+        },
+        {
+          "steps": 4000,
+          "time": 1000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.28555586106497716,
+          "max_composition": 0.7136498745491714,
+          "hermitian_error": 2.626656180048965e-10
+        },
+        {
+          "steps": 6000,
+          "time": 1500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.2851705300507559,
+          "max_composition": 0.7137561660379574,
+          "hermitian_error": 7.40097460260972e-07
+        },
+        {
+          "steps": 8000,
+          "time": 2000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.283542217079667,
+          "max_composition": 0.712719953000073,
+          "hermitian_error": 0.002085330031231651
+        },
+        {
+          "steps": 10000,
+          "time": 2500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.2811739857879059,
+          "max_composition": 0.7140277342676555,
+          "hermitian_error": 5.8958455515722745
+        },
+        {
+          "steps": 12000,
+          "time": 3000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.27886307004389227,
+          "max_composition": 0.7138882733019206,
+          "hermitian_error": 18284.184482407407
+        },
+        {
+          "steps": 14000,
+          "time": 3500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.2776912728188327,
+          "max_composition": 0.7138260337269187,
+          "hermitian_error": 56702876.502176315
+        },
+        {
+          "steps": 16000,
+          "time": 4000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.2776955860300115,
+          "max_composition": 0.7140553255096934,
+          "hermitian_error": 175846847679.46103
+        },
+        {
+          "steps": 18000,
+          "time": 4500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.2801426846817433,
+          "max_composition": 0.7159331254894639,
+          "hermitian_error": 545335893808081.2
+        }
+      ]
+    },
+    {
+      "noise": false,
+      "corrected": true,
+      "eps_th": 0.0,
+      "h_max": 0.25,
+      "steps": 24000,
+      "min": 0.28512492254049265,
+      "max": 0.7149720369349963,
+      "mass_drift": 1.1102230246251565e-16,
+      "wall_s": 3.1573927929857746,
+      "trace": [
+        {
+          "steps": 2000,
+          "time": 500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.2870626979638351,
+          "max_composition": 0.7118160904877084,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 4000,
+          "time": 1000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.28555586106497716,
+          "max_composition": 0.7136498745491716,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 6000,
+          "time": 1500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.2851705300507558,
+          "max_composition": 0.7137561660379571,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 8000,
+          "time": 2000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.28354221707966704,
+          "max_composition": 0.7127199530000732,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 10000,
+          "time": 2500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.2811739857879058,
+          "max_composition": 0.7140277342676556,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 12000,
+          "time": 3000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.27886307004389166,
+          "max_composition": 0.7138882733019242,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 14000,
+          "time": 3500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.27769127282717554,
+          "max_composition": 0.7138260337227285,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 16000,
+          "time": 4000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.2776955964477474,
+          "max_composition": 0.7140553000535828,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 18000,
+          "time": 4500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.28067107037530237,
+          "max_composition": 0.7140611561969684,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 20000,
+          "time": 5000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.28490432608243715,
+          "max_composition": 0.7141846779688804,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 22000,
+          "time": 5500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.2853297512064918,
+          "max_composition": 0.7140727261743357,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 24000,
+          "time": 6000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.28512492254049265,
+          "max_composition": 0.7149720369349963,
+          "hermitian_error": 0.0
+        }
+      ]
+    },
+    {
+      "noise": true,
+      "corrected": false,
+      "eps_th": 0.002824880519684778,
+      "h_max": 0.25,
+      "failed": "FloatingPointError('Invalid composition at t=4577.75; no noisy step was resampled')",
+      "failure": [
+        {
+          "time": 4577.75,
+          "step": 0.25,
+          "steps": 18311,
+          "invalid_members": [
+            0
+          ],
+          "before_hermitian_error": 1.0380655143106568e+17,
+          "after_hermitian_error": 1.0422466989540224e+17,
+          "before_min": 0.02058653313341537,
+          "before_max": 0.9923056443193773,
+          "after_min": -0.010848793723442341,
+          "after_max": 1.0109111241204878
+        }
+      ],
+      "wall_s": 2.683430714008864,
+      "trace": [
+        {
+          "steps": 2000,
+          "time": 500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.24445194560583886,
+          "max_composition": 0.7505864268291685,
+          "hermitian_error": 3.490142983666032e-12
+        },
+        {
+          "steps": 4000,
+          "time": 1000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.23832589460049922,
+          "max_composition": 0.7634999386532008,
+          "hermitian_error": 1.0822595235230074e-08
+        },
+        {
+          "steps": 6000,
+          "time": 1500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.23253507281301958,
+          "max_composition": 0.7698630506475653,
+          "hermitian_error": 3.356299538411769e-05
+        },
+        {
+          "steps": 8000,
+          "time": 2000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.2316645731547868,
+          "max_composition": 0.7587987352530644,
+          "hermitian_error": 0.10408549444958744
+        },
+        {
+          "steps": 10000,
+          "time": 2500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.23021142004688572,
+          "max_composition": 0.7785058618273782,
+          "hermitian_error": 322.7897280910422
+        },
+        {
+          "steps": 12000,
+          "time": 3000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.2358059705374551,
+          "max_composition": 0.7538966471273845,
+          "hermitian_error": 1001034.8618899694
+        },
+        {
+          "steps": 14000,
+          "time": 3500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.22050860526232563,
+          "max_composition": 0.7616023448419516,
+          "hermitian_error": 3104407320.03851
+        },
+        {
+          "steps": 16000,
+          "time": 4000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.23728117373397647,
+          "max_composition": 0.7672379414091443,
+          "hermitian_error": 9627381798185.557
+        },
+        {
+          "steps": 18000,
+          "time": 4500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.20311038163613782,
+          "max_composition": 0.8185995310698828,
+          "hermitian_error": 2.9856417258700628e+16
+        }
+      ]
+    },
+    {
+      "noise": true,
+      "corrected": true,
+      "eps_th": 0.002824880519684778,
+      "h_max": 0.25,
+      "steps": 24000,
+      "min": 0.23000327686630312,
+      "max": 0.7569480236487203,
+      "mass_drift": 0.0,
+      "wall_s": 4.087798349035438,
+      "trace": [
+        {
+          "steps": 2000,
+          "time": 500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.2444519456058388,
+          "max_composition": 0.7505864268291685,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 4000,
+          "time": 1000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.2383258946004994,
+          "max_composition": 0.7634999386532009,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 6000,
+          "time": 1500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.23253507281301958,
+          "max_composition": 0.7698630506475648,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 8000,
+          "time": 2000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.2316645731547868,
+          "max_composition": 0.7587987352530643,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 10000,
+          "time": 2500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.23021142004688558,
+          "max_composition": 0.7785058618273781,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 12000,
+          "time": 3000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.23580597053752395,
+          "max_composition": 0.7538966471273938,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 14000,
+          "time": 3500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.2205086046500884,
+          "max_composition": 0.7616023461881924,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 16000,
+          "time": 4000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.2372838086741972,
+          "max_composition": 0.7672336893684969,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 18000,
+          "time": 4500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.23096944668454295,
+          "max_composition": 0.7683634586183452,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 20000,
+          "time": 5000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.23586286275089494,
+          "max_composition": 0.7659441343019157,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 22000,
+          "time": 5500.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.21657012468372097,
+          "max_composition": 0.7743413969151104,
+          "hermitian_error": 0.0
+        },
+        {
+          "steps": 24000,
+          "time": 6000.0,
+          "end_time": 6000.0,
+          "step": 0.25,
+          "rejected": 0,
+          "min_composition": 0.23000327686630312,
+          "max_composition": 0.7569480236487203,
+          "hermitian_error": 0.0
+        }
+      ]
+    }
+  ],
+  "controls_passed": true
+}

@@ -1,0 +1,36 @@
+{
+ "frozen_utc": "2026-10-22T17:03:00Z",
+ "scope": "Independent post-selection audit of the matched-rerun magnetic operators over the onset study domain",
+ "timing": "Declared after the matched rerun finished and before any selected source was read or audited. Temperatures follow the onset-study routes (sweep starts 947 to 920 K, fast ramp to 903 K).",
+ "selection_effect": "None. Keep first original-verifier pass frozen; an additional-domain failure makes its recommendation unusable, and never feeds repair or reselection.",
+ "dTc_K": [
+  -15,
+  -5,
+  5
+ ],
+ "field_on_T_K": [
+  947,
+  941,
+  935,
+  929,
+  920,
+  903
+ ],
+ "field_off_T_K": 813,
+ "c0": 0.5,
+ "Tc_a": 1250,
+ "Tc_b_rule": "2*(933+dTc)-1250",
+ "curie_width": 0.01,
+ "beta_rule": "MaterialParams(c0=.5,T_s=933).beta_M while field on; zero while off",
+ "h_rule": "beta/2 for 1 T with Js_a=2 T; zero while off",
+ "grid": [
+  32,
+  24
+ ],
+ "dx": 2.0,
+ "dy": 2.0,
+ "field_rule": "Two smooth deterministic fields spanning approximately .1 to .9, differing by spatial phase; independent five finite-difference directions per case",
+ "direction_seed": 2026222409,
+ "checker": "Unchanged magnetic_task.check/energy finite-difference verifier, injected case fixture; original 1e-4 relative derivative threshold. Record finite-difference halving changes and all failures.",
+ "additional_check_cost": "Charge observed executions and seconds separately from generation-visible verification; deduplicate identical frozen source but retain reuse attribution."
+}

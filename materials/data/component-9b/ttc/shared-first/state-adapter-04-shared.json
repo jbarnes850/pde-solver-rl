@@ -1,0 +1,82 @@
+{
+  "arm": "adapter",
+  "lineage_seed": 2026226400,
+  "policy": "shared",
+  "attempts": [
+    {
+      "arm": "adapter",
+      "seed": 2026226400,
+      "turn": 1,
+      "policy": "shared",
+      "lineage_seed": 2026226400,
+      "prompt_tokens": 760,
+      "completion_tokens": 3559,
+      "latency_s": 127.74668864,
+      "finish_reason": "stop",
+      "messages_sha256": "5f33ee37aa05df711dbe1b00bde5c5267c07d836bf69b89c5da288d4fe607794",
+      "content": "import numpy as np\nfrom numpy.fft import fftshift, fftfreq, fft2, ifft2\n\ndef solver(c_batch, T, beta, h, Tc_a, Tc_b, width, dx, dy):\n    \"\"\"\n    Compute the magnetic chemical potential mu for a batch of composition fields.\n    \n    Parameters:\n    c_batch : ndarray, shape (B, Nx, Ny) - Composition fields\n    T : float - Temperature\n    beta : float - Inverse temperature factor (or just a parameter)\n    h : float - External field\n    Tc_a : float - Critical temperature parameter a\n    Tc_b : float - Critical temperature parameter b\n    width : float - Width parameter for magnetization\n    dx : float - Grid spacing in x\n    dy : float - Grid spacing in y\n    \n    Returns:\n    mu : ndarray, shape (B, Nx, Ny) - Chemical potential\n    \"\"\"\n    \n    B = c_batch.shape[0]\n    Nx = c_batch.shape[1]\n    Ny = c_batch.shape[2]\n    \n    # Precompute wavenumbers\n    kx = 2 * np.pi * fftfreq(Nx, dx)\n    ky = 2 * np.pi * fftfreq(Ny, dy)\n    \n    # Create a meshgrid for kx, ky to broadcast over the spatial dimensions later if needed,\n    # but since we process FFTs per batch, we can keep kx, ky as 1D arrays and broadcast.\n    # Actually, for the operator A, we need Kx^2 / (Kx^2 + Ky^2) on the grid.\n    # Let's create the 2D arrays of kx and ky for the FFT grid.\n    Kx, Ky = np.meshgrid(kx, ky, indexing='ij')\n    \n    # Initialize output array\n    mu = np.zeros_like(c_batch)\n    \n    # Process each batch member\n    for b in range(B):\n        c = c_batch[b]\n        \n        # 1. Compute Tc(c)\n        # Tc(c) = Tc_a + (Tc_b - Tc_a) * c\n        Tc_c = Tc_a + (Tc_b - Tc_a) * c\n        \n        # 2. Compute q\n        # q = 1 - T / Tc(c)\n        # Avoid division by zero if Tc_c is close to 0, though problem says 0 < c < 1 and usually Tc > 0\n        # Assuming Tc_c is not zero.\n        q = 1.0 - T / Tc_c\n        \n        # 3. Compute s\n        # s = (q + sqrt(q*q + width*width)) / 2\n        s = (q + np.sqrt(q * q + width * width)) / 2.0\n        \n        # 4. Compute g\n        # g = (1 - c) * sqrt(s)\n        g = (1.0 - c) * np.sqrt(s)\n        \n        # 5. Compute the linear operator A acting on g? \n        # Wait, the formula is F_mag = beta/2 * mean(g * A[g]) ... \n        # But we need the chemical potential mu defined by delta F = mean(mu * delta c).\n        # Let's derive mu.\n        # F = beta/2 * < g * A[g] > - h * < g >\n        # Note: g is a function of c. So g(c).\n        # Variation: dF/dc = beta/2 * [ (dg/dc) * A[g] + g * A[dg/dc] ] - h * dg/dc\n        # Assuming A is self-adjoint (it is, diagonal in Fourier space with real coeffs),\n        # then < g * A[dg/dc] > = < A[g] * dg/dc > (integration by parts / symmetry in Fourier)\n        # So dF/dc = beta/2 * [ 2 * (dg/dc) * A[g] ] - h * dg/dc \n        #           = beta * (dg/dc) * A[g] - h * (dg/dc)\n        #           = (beta * A[g] - h) * dg/dc\n        #\n        # However, the definition given is delta F = mean(mu * delta c).\n        # So mu = dF/dc (functional derivative).\n        # mu = (beta * A[g] - h) * (dg/dc)\n        #\n        # Let's re-verify the operator A.\n        # A is linear operator with Fourier multiplier kx^2 / (kx^2 + ky^2).\n        # So A[g] is computed by:\n        #   g_hat = FFT(g)\n        #   A_hat[k] = (kx^2 / (kx^2 + ky^2)) * g_hat (with 0/0 -> 0 at k=0)\n        #   A[g] = IFFT(A_hat)\n        \n        # Compute A[g]\n        # First, 2D FFT of g\n        g_fft = fft2(g)\n        \n        # Compute the multiplier mask\n        # Kx, Ky are already defined as Nx x Ny arrays\n        denom = Kx**2 + Ky**2\n        # Avoid division by zero at (0,0)\n        mask = np.zeros_like(Kx, dtype=float)\n        mask[Kx == 0 & Ky == 0] = 0  # Explicitly 0\n        # Actually, we can just compute term by term\n        mult = np.where(denom != 0, Kx**2 / denom, 0.0)\n        \n        # Apply multiplier in Fourier space\n        g_hat = fft2(g)\n        A_g_hat = g_hat * mult\n        # Set zero mode to 0 as per problem statement (\"set to zero at the zero wavevector\")\n        # The zero mode is at index where Kx=0 and Ky=0.\n        # fftfreq gives 0 at index Nx//2 (if Nx even) or (Nx-1)//2.\n        # Let's ensure the DC component is zeroed out in A_g_hat\n        # Find indices where Kx==0 and Ky==0.\n        # Since Kx, Ky are generated via meshgrid on fftfreq, the DC is at [0,0] if we didn't shift?\n        # fftfreq returns array where index 0 is 0 (or Ny/2 depending on convention? No, numpy fftfreq: \n        # for N=3, freqs are -1, 0, 1? No. \n        # np.fft.fftfreq(3, d=1) -> [-0.666, 0, 0.333] ? No.\n        # np.fft.fftfreq(3, d=1) -> [0, -0.5, 0.5] ??\n        # Let's check standard: fftfreq(n, d) returns frequencies ... 0, -1/d, ..., 1/d.\n        # Actually, it returns [0, 1/T, -1/T] for T=2? \n        # Standard: [0, 1/N, ..., -(N-1)/N] * (1/d)? No.\n        # numpy doc: \"frequencies for the fft ... 0, 1, ..., N/2, -(N/2-1), ..., -1\"\n        # So index 0 is 0 frequency.\n        # So Kx[0, :] and Ky[:, 0] contain zeros?\n        # kx = fftfreq(Nx, dx). kx[0] is 0.\n        # Kx = meshgrid(kx, ky, indexing='ij'). Kx[i, j] = kx[i]. So Kx[0, :] = [0, ..., 0].\n        # Ky[i, j] = ky[j]. So Ky[:, 0] = [0, ..., 0].\n        # The zero wavevector is at (0, 0).\n        A_g_hat[0, 0] = 0.0\n        \n        A_g = np.real(ifft2(A_g_hat)) # Should be real since g is real and mult is symmetric?\n        # Wait, mult is even in k? kx^2 is even. Yes.\n        # But numerical errors might cause imaginary parts. Take real.\n        \n        # Now compute dg/dc.\n        # g = (1 - c) * sqrt(s)\n        # s = (q + sqrt(q^2 + w^2)) / 2\n        # q = 1 - T / (Tc_a + (Tc_b - Tc_a)c)\n        # Let's compute derivatives symbolically or numerically?\n        # Since this is a \"solver\" for a specific mathematical expression, analytical derivation is safer.\n        # But given the complexity, maybe finite difference? No, the problem asks for \"complete chain rule\".\n        # Let's derive dg/dc.\n        \n        # Let Tc = Tc_a + (Tc_b - Tc_a) c = Tc_a + delta_Tc * c\n        # q = 1 - T / Tc\n        # dq/dc = -T * (-1/Tc^2) * dTc/dc = (T / Tc^2) * (Tc_b - Tc_a)\n        # \n        # s = (q + sqrt(q^2 + w^2)) / 2\n        # ds/dq = (1 + (1/2)(2q)/sqrt(q^2+w^2)) / 2 = (1 + q/sqrt(q^2+w^2)) / 2\n        # ds/dc = ds/dq * dq/dc\n        #\n        # g = (1-c) * sqrt(s)\n        # dg/dc = -sqrt(s) + (1-c) * (1/(2 sqrt(s))) * ds/dc\n        \n        # We need to compute this element-wise for the array.\n        \n        # Re-calculate intermediate variables for derivative\n        Tc_c = Tc_a + (Tc_b - Tc_a) * c\n        dq_dc = (T * (Tc_b - Tc_a)) / (Tc_c ** 2)\n        \n        # q is already computed\n        # sqrt_term = sqrt(q^2 + width^2)\n        sqrt_term = np.sqrt(q * q + width * width)\n        ds_dq = (1.0 + q / sqrt_term) / 2.0\n        ds_dc = ds_dq * dq_dc\n        \n        sqrt_s = np.sqrt(s)\n        dg_dc = -np.sqrt(s) + (1.0 - c) * (0.5 / sqrt_s) * ds_dc\n        \n        # mu = (beta * A[g] - h) * dg/dc\n        # Note: The term in F is mean(g * A[g]). \n        # Is it possible the operator A acts on c? No, \"A is the linear operator ... A[g]\".\n        # And the definition of F uses g * A[g].\n        # So the derivative w.r.t c involves dg/dc and A[g].\n        # Is A[g] correct? Or do we need A[dg/dc]?\n        # d/dc (g A[g]) = (dg/dc) A[g] + g A[dg/dc].\n        # Since A is self-adjoint (symmetric Fourier multiplier), < g, A[dg/dc] > = < A[g], dg/dc >.\n        # So d/dc <g A[g]> = 2 < (dg/dc) A[g] > ?\n        # Wait. The functional is F = beta/2 * sum_i g_i (A g)_i.\n        # Variation: delta F = beta/2 * sum [ delta_g_i (Ag)_i + g_i (A delta_g)_i ]\n        # = beta/2 * sum [ (delta_g)_i (Ag)_i + g_i sum_k A_ik (delta_g)_k ]\n        # Since A is symmetric, sum_k A_ik g_k = (Ag)_i.\n        # So = beta/2 * sum [ (delta_g)_i (Ag)_i + (delta_g)_i (Ag)_i ]  (assuming A symmetric and real)\n        # = beta * sum (delta_g)_i (Ag)_i\n        # = sum (beta (Ag))_i (delta_g)_i\n        # But delta_g = (dg/dc) delta_c.\n        # So delta F = sum [ beta (Ag) dg/dc ] delta_c = sum [ beta (Ag) dg/dc ] delta_c.\n        # Also the -h term: -h * sum g_i. delta(-h g) = -h (dg/dc) delta_c.\n        # So mu = beta (Ag) dg/dc - h (dg/dc) = (beta Ag - h) dg/dc.\n        # This matches my previous derivation.\n        \n        mu_term = (beta * A_g - h) * dg_dc\n        mu[b] = mu_term\n        \n    return mu\n\n```python\nimport numpy as np\nfrom numpy.fft import fft2, ifft2, fftfreq\nfrom numpy import meshgrid\n\ndef solver(c_batch, T, beta, h, Tc_a, Tc_b, width, dx, dy):\n    B = c_batch.shape[0]\n    Nx = c_batch.shape[1]\n    Ny = c_batch.shape[2]\n    \n    # Precompute wavenumbers\n    kx_vals = fftfreq(Nx, dx)\n    ky_vals = fftfreq(Ny, dy)\n    \n    # Create meshgrid for kx, ky corresponding to the grid points\n    # Using 'ij' indexing so Kx[i,j] corresponds to kx at x_i\n    Kx, Ky = meshgrid(kx_vals, ky_vals, indexing='ij')\n    \n    mu = np.zeros_like(c_batch)\n    \n    for b in range(B):\n        c = c_batch[b]\n        \n        # Tc(c)\n        Tc_c = Tc_a + (Tc_b - Tc_a) * c\n        \n        # q\n        q = 1.0 - T / Tc_c\n        \n        # s\n        s = (q + np.sqrt(q * q + width * width)) / 2.0\n        \n        # g\n        g = (1.0 - c) * np.sqrt(s)\n        \n        # Compute A[g]\n        # Fourier transform of g\n        g_hat = fft2(g)\n        \n        # Multiplier: kx^2 / (kx^2 + ky^2)\n        denom = Kx**2 + Ky**2\n        # Avoid division by zero at (0,0)\n        mult = np.where(denom != 0, Kx**2 / denom, 0.0)\n        \n        # Apply multiplier\n        A_g_hat = g_hat * mult\n        # Zero out DC component explicitly as per problem statement\n        A_g_hat[0, 0] = 0.0\n        \n        A_g = np.real(ifft2(A_g_hat))\n        \n        # Derivative dg/dc\n        # dq/dc\n        dq_dc = (T * (Tc_b - Tc_a)) / (Tc_c ** 2)\n        \n        # ds/dq\n        sqrt_qw = np.sqrt(q * q + width * width)\n        ds_dq = (1.0 + q / sqrt_qw) / 2.0\n        \n        # ds/dc\n        ds_dc = ds_dq * dq_dc\n        \n        # dg/dc = d/d c [ (1-c) * sqrt(s) ]\n        #        = -sqrt(s) + (1-c) * (1/(2 sqrt(s))) * ds/dc\n        sqrt_s = np.sqrt(s)\n        dg_dc = -sqrt_s + (1.0 - c) * (0.5 / sqrt_s) * ds_dc\n        \n        # Chemical potential mu\n        # mu = (beta * A[g] - h) * dg/dc\n        mu[b] = (beta * A_g - h) * dg_dc\n        \n    return mu\n```",
+      "code": "import numpy as np\nfrom numpy.fft import fft2, ifft2, fftfreq\nfrom numpy import meshgrid\n\ndef solver(c_batch, T, beta, h, Tc_a, Tc_b, width, dx, dy):\n    B = c_batch.shape[0]\n    Nx = c_batch.shape[1]\n    Ny = c_batch.shape[2]\n    \n    # Precompute wavenumbers\n    kx_vals = fftfreq(Nx, dx)\n    ky_vals = fftfreq(Ny, dy)\n    \n    # Create meshgrid for kx, ky corresponding to the grid points\n    # Using 'ij' indexing so Kx[i,j] corresponds to kx at x_i\n    Kx, Ky = meshgrid(kx_vals, ky_vals, indexing='ij')\n    \n    mu = np.zeros_like(c_batch)\n    \n    for b in range(B):\n        c = c_batch[b]\n        \n        # Tc(c)\n        Tc_c = Tc_a + (Tc_b - Tc_a) * c\n        \n        # q\n        q = 1.0 - T / Tc_c\n        \n        # s\n        s = (q + np.sqrt(q * q + width * width)) / 2.0\n        \n        # g\n        g = (1.0 - c) * np.sqrt(s)\n        \n        # Compute A[g]\n        # Fourier transform of g\n        g_hat = fft2(g)\n        \n        # Multiplier: kx^2 / (kx^2 + ky^2)\n        denom = Kx**2 + Ky**2\n        # Avoid division by zero at (0,0)\n        mult = np.where(denom != 0, Kx**2 / denom, 0.0)\n        \n        # Apply multiplier\n        A_g_hat = g_hat * mult\n        # Zero out DC component explicitly as per problem statement\n        A_g_hat[0, 0] = 0.0\n        \n        A_g = np.real(ifft2(A_g_hat))\n        \n        # Derivative dg/dc\n        # dq/dc\n        dq_dc = (T * (Tc_b - Tc_a)) / (Tc_c ** 2)\n        \n        # ds/dq\n        sqrt_qw = np.sqrt(q * q + width * width)\n        ds_dq = (1.0 + q / sqrt_qw) / 2.0\n        \n        # ds/dc\n        ds_dc = ds_dq * dq_dc\n        \n        # dg/dc = d/d c [ (1-c) * sqrt(s) ]\n        #        = -sqrt(s) + (1-c) * (1/(2 sqrt(s))) * ds/dc\n        sqrt_s = np.sqrt(s)\n        dg_dc = -sqrt_s + (1.0 - c) * (0.5 / sqrt_s) * ds_dc\n        \n        # Chemical potential mu\n        # mu = (beta * A[g] - h) * dg/dc\n        mu[b] = (beta * A_g - h) * dg_dc\n        \n    return mu",
+      "code_sha256": "51725f6e13de3a8b9f9d9c1e19d6f557cc6e143d074f7d6f5d1cda955da92c32",
+      "check": {
+        "passed": true,
+        "n_passed": 5,
+        "cases": [
+          {
+            "case": "mixed",
+            "ok": true,
+            "error": null,
+            "stderr": "/work/candidate.py:42: RuntimeWarning: invalid value encountered in divide\n  mult = np.where(denom != 0, Kx**2 / denom, 0.0)\n",
+            "seconds": 0.3659400130272843,
+            "max_relative_directional_error": 1.235133760654946e-07,
+            "passed": true
+          },
+          {
+            "case": "self_energy_only",
+            "ok": true,
+            "error": null,
+            "stderr": "/work/candidate.py:42: RuntimeWarning: invalid value encountered in divide\n  mult = np.where(denom != 0, Kx**2 / denom, 0.0)\n",
+            "seconds": 0.41590499196900055,
+            "max_relative_directional_error": 1.3565466524638665e-06,
+            "passed": true
+          },
+          {
+            "case": "applied_field_only",
+            "ok": true,
+            "error": null,
+            "stderr": "/work/candidate.py:42: RuntimeWarning: invalid value encountered in divide\n  mult = np.where(denom != 0, Kx**2 / denom, 0.0)\n",
+            "seconds": 0.4154090689844452,
+            "max_relative_directional_error": 5.177193452817896e-08,
+            "passed": true
+          },
+          {
+            "case": "uniform",
+            "ok": true,
+            "error": null,
+            "stderr": "/work/candidate.py:42: RuntimeWarning: invalid value encountered in divide\n  mult = np.where(denom != 0, Kx**2 / denom, 0.0)\n",
+            "seconds": 0.5155270909890532,
+            "max_relative_directional_error": 1.7294718918828727e-08,
+            "passed": true
+          },
+          {
+            "case": "zero_couplings",
+            "ok": true,
+            "error": null,
+            "stderr": "/work/candidate.py:42: RuntimeWarning: invalid value encountered in divide\n  mult = np.where(denom != 0, Kx**2 / denom, 0.0)\n",
+            "seconds": 0.5154326910269447,
+            "max_relative_directional_error": 0.0,
+            "passed": true
+          }
+        ],
+        "feedback": "All checks passed."
+      },
+      "feedback": "All checks passed.",
+      "passed": true,
+      "verifier_executions": 5,
+      "verifier_seconds": 2.228213855996728
+    }
+  ],
+  "selected": {
+    "turn": 1,
+    "code_sha256": "51725f6e13de3a8b9f9d9c1e19d6f557cc6e143d074f7d6f5d1cda955da92c32"
+  }
+}

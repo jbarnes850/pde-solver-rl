@@ -1,0 +1,33 @@
+{
+  "frozen_utc": "2026-10-22T11:49:54.606262+00:00",
+  "scope": "Independent post-selection magnetic-operator audit over the declared processing domain, no route outputs or production data",
+  "timing": "Declared after fresh generation started, before examining fresh generated code or check outcomes. Cases follow the already fixed physical grid, not model benefit.",
+  "selection_effect": "None. Keep first original-verifier pass frozen; an additional-domain failure makes its recommendation unusable, and never feeds repair or reselection.",
+  "dTc_K": [
+    -15,
+    -5,
+    5
+  ],
+  "field_on_T_K": [
+    943,
+    932.5,
+    923.5
+  ],
+  "field_off_T_K": 813,
+  "c0": 0.5,
+  "Tc_a": 1250,
+  "Tc_b_rule": "2*(933+dTc)-1250",
+  "curie_width": 0.01,
+  "beta_rule": "MaterialParams(c0=.5,T_s=933).beta_M while field on; zero while off",
+  "h_rule": "beta/2 for 1 T with Js_a=2 T; zero while off",
+  "grid": [
+    32,
+    24
+  ],
+  "dx": 2.0,
+  "dy": 2.0,
+  "field_rule": "Two smooth deterministic fields spanning approximately .1 to .9, differing by spatial phase; independent five finite-difference directions per case",
+  "direction_seed": 2026122409,
+  "checker": "Unchanged magnetic_task.check/energy finite-difference verifier, injected case fixture; original 1e-4 relative derivative threshold. Record finite-difference halving changes and all failures.",
+  "additional_check_cost": "Charge observed executions and seconds separately from generation-visible verification; deduplicate identical frozen source but retain reuse attribution."
+}

@@ -1,0 +1,36 @@
+{
+  "scope": "Matched rerun: fresh sampling versus verifier revision, in the RLVP training format.\n\nChanges from magnetic_decision_ttc_batch.py, all to match how the adapter was trained:\nthe training system prompt byte for byte, a def solver(...) contract, the training code\nextractor, a 10,000-token completion cap and no instruction against drafts. New lineage\nseeds. Physics, cases, check threshold, budgets and selection rule are unchanged.\n\nInit only prepares text. Apply executes unchanged checks only on guarded f7e2\nCPU sandboxes. Generation uses the existing generation-only Colab batch runner.\nNo route utility, physical reference trajectory or production result is read.\n",
+  "frozen_utc": "2026-10-22T16:02:33.385605+00:00",
+  "n_lineages_per_arm": 8,
+  "arms": [
+    "base",
+    "adapter"
+  ],
+  "policies": [
+    "fresh",
+    "feedback"
+  ],
+  "call_budgets": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "max_actual_calls": 240,
+  "completion_cap": 10000,
+  "system_prompt_sha256": "8d59114f2a5e898799b6685cd751e02371c2ffc7796e3a66f7add090d3fa95db",
+  "temperature": 0.7,
+  "top_p": 1.0,
+  "enable_thinking": false,
+  "base_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+  "adapter_revision": "aa5083ca21cf11715552e40b59af9a1a5ac541f5",
+  "selection": "Earliest complete original magnetic variational pass; stop that branch. Shared first calls and checks. Otherwise abstain; faster-cooling operational fallback is separately labeled.",
+  "supplied_guidance": "Same energy and constitutive law as the original task, restated in the training format; unchanged variational-check feedback only in the feedback branch.",
+  "changes_from_original": "training system prompt; def solver contract; training extractor; 10,000-token cap; drafts allowed; new lineage seeds",
+  "source_sha256": {
+    "materials/scripts/magnetic_matched_ttc_batch.py": "17e31062be28ee3b4d466a5635af814b06d1eadc3516706b704ec427360dfae3",
+    "materials/rlvpm/magnetic_task.py": "c1524e8ca2a38a02984d834b3fa58f88c318d5461a7d147f45a67a5ea61d4c46",
+    "materials/rlvpm/magnetic_task_rlvp.py": "e22c0882605c9b9492b0e395b31730b86e2178cc346f446e7541801c53a65863",
+    "materials/rlvpm/llm.py": "c85bf1e053c06488d49ae88e230f24bc6c63f0cf8618fb45cc55f9cbfd32ca1b"
+  }
+}

@@ -1,0 +1,492 @@
+{
+  "scope": "Data-only compute/coverage accounting for frozen fresh magnetic policies.\n\nComponent coverage is diagnostic. Processing regret awaits qualified fitting\nand independent production outputs; this script never substitutes passes for it.\n",
+  "rows": [
+    {
+      "arm": "base",
+      "policy": "fresh",
+      "budget": 1,
+      "lineages": 8,
+      "passed_components": 0,
+      "unresolved_lineages": 0,
+      "independently_audited_components": 0,
+      "attempt_outcomes": {
+        "execution": 8
+      },
+      "length_limited_calls": 0,
+      "complete_at_budget": true,
+      "observed_calls": 8,
+      "prompt_tokens": 4408,
+      "completion_tokens": 16746,
+      "verifier_executions": 40,
+      "verifier_seconds": 24.916658824076876,
+      "selected": []
+    },
+    {
+      "arm": "base",
+      "policy": "fresh",
+      "budget": 2,
+      "lineages": 8,
+      "passed_components": 2,
+      "unresolved_lineages": 0,
+      "independently_audited_components": 2,
+      "attempt_outcomes": {
+        "execution": 13,
+        "pass": 2,
+        "numerical_check": 1
+      },
+      "length_limited_calls": 0,
+      "complete_at_budget": true,
+      "observed_calls": 16,
+      "prompt_tokens": 8816,
+      "completion_tokens": 35544,
+      "verifier_executions": 80,
+      "verifier_seconds": 49.23898631002521,
+      "selected": [
+        {
+          "lineage_seed": 2026124400,
+          "turn": 2,
+          "code_sha256": "9ba051f01824293356d248ef692ce2ccfcb9604a1068bfbd528a9720c2684509"
+        },
+        {
+          "lineage_seed": 2026127400,
+          "turn": 2,
+          "code_sha256": "a3c8cce486c9d57422da2c8d621bcf0d212d38bda9162af3fbb470e2b45d9883"
+        }
+      ]
+    },
+    {
+      "arm": "base",
+      "policy": "fresh",
+      "budget": 4,
+      "lineages": 8,
+      "passed_components": 2,
+      "unresolved_lineages": 0,
+      "independently_audited_components": 2,
+      "attempt_outcomes": {
+        "execution": 23,
+        "pass": 2,
+        "numerical_check": 3
+      },
+      "length_limited_calls": 2,
+      "complete_at_budget": true,
+      "observed_calls": 28,
+      "prompt_tokens": 15428,
+      "completion_tokens": 67923,
+      "verifier_executions": 140,
+      "verifier_seconds": 83.30852781335125,
+      "selected": [
+        {
+          "lineage_seed": 2026124400,
+          "turn": 2,
+          "code_sha256": "9ba051f01824293356d248ef692ce2ccfcb9604a1068bfbd528a9720c2684509"
+        },
+        {
+          "lineage_seed": 2026127400,
+          "turn": 2,
+          "code_sha256": "a3c8cce486c9d57422da2c8d621bcf0d212d38bda9162af3fbb470e2b45d9883"
+        }
+      ]
+    },
+    {
+      "arm": "base",
+      "policy": "fresh",
+      "budget": 8,
+      "lineages": 8,
+      "passed_components": 2,
+      "unresolved_lineages": 0,
+      "independently_audited_components": 2,
+      "attempt_outcomes": {
+        "execution": 42,
+        "numerical_check": 7,
+        "pass": 2,
+        "extraction": 1
+      },
+      "length_limited_calls": 4,
+      "complete_at_budget": true,
+      "observed_calls": 52,
+      "prompt_tokens": 28652,
+      "completion_tokens": 124787,
+      "verifier_executions": 255,
+      "verifier_seconds": 161.42934033105848,
+      "selected": [
+        {
+          "lineage_seed": 2026124400,
+          "turn": 2,
+          "code_sha256": "9ba051f01824293356d248ef692ce2ccfcb9604a1068bfbd528a9720c2684509"
+        },
+        {
+          "lineage_seed": 2026127400,
+          "turn": 2,
+          "code_sha256": "a3c8cce486c9d57422da2c8d621bcf0d212d38bda9162af3fbb470e2b45d9883"
+        }
+      ]
+    },
+    {
+      "arm": "base",
+      "policy": "feedback",
+      "budget": 1,
+      "lineages": 8,
+      "passed_components": 0,
+      "unresolved_lineages": 0,
+      "independently_audited_components": 0,
+      "attempt_outcomes": {
+        "execution": 8
+      },
+      "length_limited_calls": 0,
+      "complete_at_budget": true,
+      "observed_calls": 8,
+      "prompt_tokens": 4408,
+      "completion_tokens": 16746,
+      "verifier_executions": 40,
+      "verifier_seconds": 24.916658824076876,
+      "selected": []
+    },
+    {
+      "arm": "base",
+      "policy": "feedback",
+      "budget": 2,
+      "lineages": 8,
+      "passed_components": 1,
+      "unresolved_lineages": 0,
+      "independently_audited_components": 1,
+      "attempt_outcomes": {
+        "execution": 14,
+        "pass": 1,
+        "numerical_check": 1
+      },
+      "length_limited_calls": 0,
+      "complete_at_budget": true,
+      "observed_calls": 16,
+      "prompt_tokens": 36333,
+      "completion_tokens": 26711,
+      "verifier_executions": 80,
+      "verifier_seconds": 49.13733662618324,
+      "selected": [
+        {
+          "lineage_seed": 2026126400,
+          "turn": 2,
+          "code_sha256": "a099490d819f9ebff1536947717f033eae57747457ec917c6d5fcea8e6daae8c"
+        }
+      ]
+    },
+    {
+      "arm": "base",
+      "policy": "feedback",
+      "budget": 4,
+      "lineages": 8,
+      "passed_components": 1,
+      "unresolved_lineages": 0,
+      "independently_audited_components": 1,
+      "attempt_outcomes": {
+        "execution": 24,
+        "numerical_check": 5,
+        "pass": 1
+      },
+      "length_limited_calls": 0,
+      "complete_at_budget": true,
+      "observed_calls": 30,
+      "prompt_tokens": 74913,
+      "completion_tokens": 43590,
+      "verifier_executions": 150,
+      "verifier_seconds": 88.76090687478427,
+      "selected": [
+        {
+          "lineage_seed": 2026126400,
+          "turn": 2,
+          "code_sha256": "a099490d819f9ebff1536947717f033eae57747457ec917c6d5fcea8e6daae8c"
+        }
+      ]
+    },
+    {
+      "arm": "base",
+      "policy": "feedback",
+      "budget": 8,
+      "lineages": 8,
+      "passed_components": 4,
+      "unresolved_lineages": 0,
+      "independently_audited_components": 4,
+      "attempt_outcomes": {
+        "execution": 40,
+        "numerical_check": 10,
+        "pass": 4,
+        "extraction": 1
+      },
+      "length_limited_calls": 0,
+      "complete_at_budget": true,
+      "observed_calls": 55,
+      "prompt_tokens": 152190,
+      "completion_tokens": 78273,
+      "verifier_executions": 270,
+      "verifier_seconds": 171.09409948071698,
+      "selected": [
+        {
+          "lineage_seed": 2026123400,
+          "turn": 8,
+          "code_sha256": "b0072b179a3aaa2ea27531f03f4a2e40322afe78441cccb12eb0f5310793bd35"
+        },
+        {
+          "lineage_seed": 2026126400,
+          "turn": 2,
+          "code_sha256": "a099490d819f9ebff1536947717f033eae57747457ec917c6d5fcea8e6daae8c"
+        },
+        {
+          "lineage_seed": 2026127400,
+          "turn": 6,
+          "code_sha256": "307a07d3b3d8f01639225cd17629a965fd6d3ab760e15ea4fdf35266fdc0f0e1"
+        },
+        {
+          "lineage_seed": 2026128400,
+          "turn": 7,
+          "code_sha256": "99566242077b2177767b909d1650c30fd44742e719506080b6949dccba59af67"
+        }
+      ]
+    },
+    {
+      "arm": "adapter",
+      "policy": "fresh",
+      "budget": 1,
+      "lineages": 8,
+      "passed_components": 0,
+      "unresolved_lineages": 0,
+      "independently_audited_components": 0,
+      "attempt_outcomes": {
+        "execution": 5,
+        "extraction": 3
+      },
+      "length_limited_calls": 7,
+      "complete_at_budget": true,
+      "observed_calls": 8,
+      "prompt_tokens": 4408,
+      "completion_tokens": 30516,
+      "verifier_executions": 25,
+      "verifier_seconds": 15.485600961837918,
+      "selected": []
+    },
+    {
+      "arm": "adapter",
+      "policy": "fresh",
+      "budget": 2,
+      "lineages": 8,
+      "passed_components": 0,
+      "unresolved_lineages": 0,
+      "independently_audited_components": 0,
+      "attempt_outcomes": {
+        "execution": 9,
+        "extraction": 7
+      },
+      "length_limited_calls": 14,
+      "complete_at_budget": true,
+      "observed_calls": 16,
+      "prompt_tokens": 8816,
+      "completion_tokens": 62382,
+      "verifier_executions": 45,
+      "verifier_seconds": 28.021297371888068,
+      "selected": []
+    },
+    {
+      "arm": "adapter",
+      "policy": "fresh",
+      "budget": 4,
+      "lineages": 8,
+      "passed_components": 0,
+      "unresolved_lineages": 0,
+      "independently_audited_components": 0,
+      "attempt_outcomes": {
+        "execution": 17,
+        "extraction": 12,
+        "numerical_check": 3
+      },
+      "length_limited_calls": 23,
+      "complete_at_budget": true,
+      "observed_calls": 32,
+      "prompt_tokens": 17632,
+      "completion_tokens": 118692,
+      "verifier_executions": 100,
+      "verifier_seconds": 59.999748971662484,
+      "selected": []
+    },
+    {
+      "arm": "adapter",
+      "policy": "fresh",
+      "budget": 8,
+      "lineages": 8,
+      "passed_components": 3,
+      "unresolved_lineages": 0,
+      "independently_audited_components": 3,
+      "attempt_outcomes": {
+        "execution": 34,
+        "extraction": 18,
+        "numerical_check": 4,
+        "pass": 3
+      },
+      "length_limited_calls": 44,
+      "complete_at_budget": true,
+      "observed_calls": 59,
+      "prompt_tokens": 32509,
+      "completion_tokens": 222904,
+      "verifier_executions": 205,
+      "verifier_seconds": 132.19136976799928,
+      "selected": [
+        {
+          "lineage_seed": 2026125400,
+          "turn": 7,
+          "code_sha256": "79eb691913697b15638edc251fa24d6a9dfa04bd15dd6717658aad4076fa18e5"
+        },
+        {
+          "lineage_seed": 2026126400,
+          "turn": 5,
+          "code_sha256": "4119018dcb0057a12b94e30f4fffed7457f7c701846ad03a92b0a8626683c728"
+        },
+        {
+          "lineage_seed": 2026128400,
+          "turn": 7,
+          "code_sha256": "0675d2a308b774b3fa555d1a3263e1970408456341fcaa4a931b91c6db574fd8"
+        }
+      ]
+    },
+    {
+      "arm": "adapter",
+      "policy": "feedback",
+      "budget": 1,
+      "lineages": 8,
+      "passed_components": 0,
+      "unresolved_lineages": 0,
+      "independently_audited_components": 0,
+      "attempt_outcomes": {
+        "execution": 5,
+        "extraction": 3
+      },
+      "length_limited_calls": 7,
+      "complete_at_budget": true,
+      "observed_calls": 8,
+      "prompt_tokens": 4408,
+      "completion_tokens": 30516,
+      "verifier_executions": 25,
+      "verifier_seconds": 15.485600961837918,
+      "selected": []
+    },
+    {
+      "arm": "adapter",
+      "policy": "feedback",
+      "budget": 2,
+      "lineages": 8,
+      "passed_components": 1,
+      "unresolved_lineages": 0,
+      "independently_audited_components": 1,
+      "attempt_outcomes": {
+        "execution": 9,
+        "numerical_check": 3,
+        "extraction": 3,
+        "pass": 1
+      },
+      "length_limited_calls": 7,
+      "complete_at_budget": true,
+      "observed_calls": 16,
+      "prompt_tokens": 47595,
+      "completion_tokens": 45867,
+      "verifier_executions": 65,
+      "verifier_seconds": 40.35786067479057,
+      "selected": [
+        {
+          "lineage_seed": 2026127400,
+          "turn": 2,
+          "code_sha256": "27eff8a2927e625e31b4012d8f9c3360b3f3f562b81294f14901c22d7be9d47e"
+        }
+      ]
+    },
+    {
+      "arm": "adapter",
+      "policy": "feedback",
+      "budget": 4,
+      "lineages": 8,
+      "passed_components": 2,
+      "unresolved_lineages": 0,
+      "independently_audited_components": 2,
+      "attempt_outcomes": {
+        "execution": 14,
+        "numerical_check": 10,
+        "extraction": 3,
+        "pass": 2
+      },
+      "length_limited_calls": 8,
+      "complete_at_budget": true,
+      "observed_calls": 29,
+      "prompt_tokens": 96050,
+      "completion_tokens": 69559,
+      "verifier_executions": 130,
+      "verifier_seconds": 77.336043627467,
+      "selected": [
+        {
+          "lineage_seed": 2026127400,
+          "turn": 2,
+          "code_sha256": "27eff8a2927e625e31b4012d8f9c3360b3f3f562b81294f14901c22d7be9d47e"
+        },
+        {
+          "lineage_seed": 2026129400,
+          "turn": 3,
+          "code_sha256": "0d76dc1576d3fd6ba7bbbeeaa43833ed6c7247a9aa1f4304717b7c758567ccba"
+        }
+      ]
+    },
+    {
+      "arm": "adapter",
+      "policy": "feedback",
+      "budget": 8,
+      "lineages": 8,
+      "passed_components": 3,
+      "unresolved_lineages": 0,
+      "independently_audited_components": 3,
+      "attempt_outcomes": {
+        "execution": 17,
+        "extraction": 7,
+        "numerical_check": 24,
+        "pass": 3
+      },
+      "length_limited_calls": 12,
+      "complete_at_budget": true,
+      "observed_calls": 51,
+      "prompt_tokens": 156860,
+      "completion_tokens": 114330,
+      "verifier_executions": 220,
+      "verifier_seconds": 138.25224973156583,
+      "selected": [
+        {
+          "lineage_seed": 2026126400,
+          "turn": 6,
+          "code_sha256": "18dbeaf7fa93d293be158608a57b0366c942bdadef7c4dffac39180728e13aab"
+        },
+        {
+          "lineage_seed": 2026127400,
+          "turn": 2,
+          "code_sha256": "27eff8a2927e625e31b4012d8f9c3360b3f3f562b81294f14901c22d7be9d47e"
+        },
+        {
+          "lineage_seed": 2026129400,
+          "turn": 3,
+          "code_sha256": "0d76dc1576d3fd6ba7bbbeeaa43833ed6c7247a9aa1f4304717b7c758567ccba"
+        }
+      ]
+    }
+  ],
+  "unique_actual_generation_calls": 201,
+  "unique_actual_prompt_tokens": 361395,
+  "unique_actual_completion_tokens": 493032,
+  "unique_actual_visible_verifier_executions": 885,
+  "unique_actual_visible_verifier_seconds": 562.5647995254258,
+  "independent_audits": {
+    "domain-audit": {
+      "sources": 12,
+      "passed_sources": 12,
+      "executions": 180,
+      "seconds": 117.36000735149719
+    },
+    "endpoint-audit": {
+      "sources": 12,
+      "passed_sources": 12,
+      "executions": 108,
+      "seconds": 68.57983080745908
+    }
+  },
+  "processing_decision_status": "Awaiting numerical qualification, fitting/pilot/production banks and program-to-trajectory attribution; operator audits are reported separately",
+  "limits": "One magnetic operator-construction task, eight stochastic shared-parent lineages per arm; not eight independent scientific tasks. Policy cost rows each include their shared first calls, so do not sum them as actual spend. Unresolved budgets are censored, not failures. Finite operator-check passes are not qualified processing recommendations."
+}

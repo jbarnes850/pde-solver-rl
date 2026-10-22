@@ -58,3 +58,7 @@ pipeline/trials/*
 !pipeline/trials/calib-fresh-trained32.json
 !pipeline/trials/calib-freshv3-s160.json
 !pipeline/trials/calib-heldout-ext160.json
+
+# Materials decision study: analysis outputs and optional local fonts
+materials/out/
+materials/fonts/

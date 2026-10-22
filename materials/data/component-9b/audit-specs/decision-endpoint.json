@@ -1,0 +1,32 @@
+{
+  "frozen_utc": "2026-10-22T13:01:28.906840+00:00",
+  "scope": "Supplemental independent endpoint coverage: faster-cooling route reaches 903 K before field switch-off.",
+  "timing": "Added after the first post-selection audit, before inspecting fresh source bodies or reference endpoints. The physical schedule, not any model result, identifies the missing endpoint. Original audit and selections remain frozen.",
+  "selection_effect": "No feedback or replacement selection. Failure makes the existing selected program unusable.",
+  "dTc_K": [
+    -15,
+    -5,
+    5
+  ],
+  "field_on_T_K": [
+    903
+  ],
+  "field_off_T_K": 813,
+  "c0": 0.5,
+  "Tc_a": 1250,
+  "Tc_b_rule": "2*(933+dTc)-1250",
+  "curie_width": 0.01,
+  "beta_rule": "MaterialParams(c0=.5,T_s=933).beta_M while field on; zero while off",
+  "h_rule": "beta/2 for 1 T with Js_a=2 T; zero while off",
+  "grid": [
+    32,
+    24
+  ],
+  "dx": 2.0,
+  "dy": 2.0,
+  "field_rule": "Two smooth deterministic fields spanning approximately .1 to .9, differing by spatial phase; independent five finite-difference directions per case",
+  "direction_seed": 2026122409,
+  "checker": "Unchanged magnetic_task.check/energy finite-difference verifier, injected case fixture; original 1e-4 relative derivative threshold. Record finite-difference halving changes and all failures.",
+  "additional_check_cost": "Charge observed executions and seconds separately from generation-visible verification; deduplicate identical frozen source but retain reuse attribution.",
+  "coverage_note": "Adds three new field-on cases, one for each registered Curie offset; repeats the existing off and mathematical controls."
+}

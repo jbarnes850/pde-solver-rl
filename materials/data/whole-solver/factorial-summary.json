@@ -1,0 +1,222 @@
+{
+  "scope": "full frozen factorial, unchanged deterministic task and checks; not physical decision results",
+  "cells": [
+    {
+      "requested_cap": 20000,
+      "arm": "base",
+      "variant": "plain",
+      "lineages": 8,
+      "attempts": 24,
+      "passed_attempts": 0,
+      "completion_tokens": 100317,
+      "prompt_tokens": 102162,
+      "generation_errors": 0,
+      "max_checks_passed": 2,
+      "effective_caps_by_round": {
+        "0": [
+          20000,
+          20000
+        ],
+        "1": [
+          11432,
+          20000
+        ],
+        "2": [
+          20000,
+          20000
+        ]
+      }
+    },
+    {
+      "requested_cap": 20000,
+      "arm": "base",
+      "variant": "scheme2",
+      "lineages": 8,
+      "attempts": 24,
+      "passed_attempts": 0,
+      "completion_tokens": 153623,
+      "prompt_tokens": 127824,
+      "generation_errors": 0,
+      "max_checks_passed": 1,
+      "effective_caps_by_round": {
+        "0": [
+          20000,
+          20000
+        ],
+        "1": [
+          13018,
+          20000
+        ],
+        "2": [
+          20000,
+          20000
+        ]
+      }
+    },
+    {
+      "requested_cap": 20000,
+      "arm": "adapter",
+      "variant": "plain",
+      "lineages": 8,
+      "attempts": 24,
+      "passed_attempts": 0,
+      "completion_tokens": 196258,
+      "prompt_tokens": 51672,
+      "generation_errors": 0,
+      "max_checks_passed": 2,
+      "effective_caps_by_round": {
+        "0": [
+          20000,
+          20000
+        ],
+        "1": [
+          20000,
+          20000
+        ],
+        "2": [
+          20000,
+          20000
+        ]
+      }
+    },
+    {
+      "requested_cap": 20000,
+      "arm": "adapter",
+      "variant": "scheme2",
+      "lineages": 8,
+      "attempts": 24,
+      "passed_attempts": 0,
+      "completion_tokens": 265404,
+      "prompt_tokens": 124670,
+      "generation_errors": 0,
+      "max_checks_passed": 6,
+      "effective_caps_by_round": {
+        "0": [
+          20000,
+          20000
+        ],
+        "1": [
+          11125,
+          20000
+        ],
+        "2": [
+          20000,
+          20000
+        ]
+      }
+    },
+    {
+      "requested_cap": 9216,
+      "arm": "base",
+      "variant": "plain",
+      "lineages": 8,
+      "attempts": 24,
+      "passed_attempts": 0,
+      "completion_tokens": 83156,
+      "prompt_tokens": 90827,
+      "generation_errors": 0,
+      "max_checks_passed": 1,
+      "effective_caps_by_round": {
+        "0": [
+          9216,
+          9216
+        ],
+        "1": [
+          9216,
+          9216
+        ],
+        "2": [
+          9216,
+          9216
+        ]
+      }
+    },
+    {
+      "requested_cap": 9216,
+      "arm": "base",
+      "variant": "scheme2",
+      "lineages": 8,
+      "attempts": 24,
+      "passed_attempts": 0,
+      "completion_tokens": 115218,
+      "prompt_tokens": 129714,
+      "generation_errors": 0,
+      "max_checks_passed": 0,
+      "effective_caps_by_round": {
+        "0": [
+          9216,
+          9216
+        ],
+        "1": [
+          9216,
+          9216
+        ],
+        "2": [
+          9216,
+          9216
+        ]
+      }
+    },
+    {
+      "requested_cap": 9216,
+      "arm": "adapter",
+      "variant": "plain",
+      "lineages": 8,
+      "attempts": 24,
+      "passed_attempts": 0,
+      "completion_tokens": 142903,
+      "prompt_tokens": 65075,
+      "generation_errors": 0,
+      "max_checks_passed": 2,
+      "effective_caps_by_round": {
+        "0": [
+          9216,
+          9216
+        ],
+        "1": [
+          9216,
+          9216
+        ],
+        "2": [
+          9216,
+          9216
+        ]
+      }
+    },
+    {
+      "requested_cap": 9216,
+      "arm": "adapter",
+      "variant": "scheme2",
+      "lineages": 8,
+      "attempts": 24,
+      "passed_attempts": 0,
+      "completion_tokens": 175288,
+      "prompt_tokens": 143813,
+      "generation_errors": 0,
+      "max_checks_passed": 4,
+      "effective_caps_by_round": {
+        "0": [
+          9216,
+          9216
+        ],
+        "1": [
+          9216,
+          9216
+        ],
+        "2": [
+          9216,
+          9216
+        ]
+      }
+    }
+  ],
+  "total_attempts": 192,
+  "total_completion_tokens": 1232167,
+  "total_prompt_tokens": 835757,
+  "source_sha256": {
+    "9216/generations.jsonl": "8cb25cb77306c95ff512a39c1c486fa56d1cf26ae2ac7c011db6174c88116bc3",
+    "9216/candidates.jsonl": "6db62a38eee4bbdedb39236fc3b99222fa354c1ab8ebb04b819a34e9bff7e09e",
+    "20000/generations.jsonl": "1c21930005586f3631910ff75e4e27d1471ded461caf61981bf53ba381390a88",
+    "20000/candidates.jsonl": "3ad1c50e168325fd0a0086a4072df9468d52324292d306a0d15a0bd28c601d49"
+  }
+}

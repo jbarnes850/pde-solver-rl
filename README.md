@@ -5,7 +5,7 @@
 Code for training Qwen3.5-9B with reinforcement learning against a physics verifier to write numerical solvers for
 partial differential equations (PDEs).
 
-- Research write-up: https://jbarnes850.github.io
+- Research write-up: https://jbarnes850.github.io/2026/10/12/post-training-language-models-for-scientific-simulation/
 - Trained adapter: https://huggingface.co/Jarrodbarnes/qwen3.5-9b-pde-solver
 
 ## Overview
@@ -92,6 +92,15 @@ case-paired and two-sided, is -13.5 (p < 1e-6), +6.6 (p = 0.009) and +10.1 (p = 
   step 128 on, each phase drew new cases, screened them with the phase's starting policy (8 samples each), kept
   cases that were neither solved nor dead, and filled per-family quotas.
 
+## Materials decision study
+
+The write-up's final section applies the trained model to a processing decision: choosing a field-annealing
+schedule for a synthetic Fe–Cr–Co permanent magnet with a verified phase-field simulation, deciding whether
+measuring the alloy first is worth its cost, and testing whether the model can write the magnetic term the
+simulator needs. The code, the saved results and the commands that reproduce every number and figure in that
+section are in [`materials/`](materials/README.md). The decision analysis and figures rerun on a CPU from the saved
+results; the simulations and the model evaluation need one GPU.
+
 ## Repository layout
 
 | Path | Contents |
@@ -103,6 +112,7 @@ case-paired and two-sided, is -13.5 (p < 1e-6), +6.6 (p = 0.009) and +10.1 (p = 
 | `pipeline/` | Case generation, curriculum, launch, monitoring, evaluation and statistics (`offline/` and the evaluation folders), and the analyses behind the reported figures (`analysis/`). See `pipeline/README.md`. |
 | `prompts/` | The system prompt used in training and evaluation, and the per-family grid conventions appended to problem statements. |
 | `containers/solver.Dockerfile` | Solver sandbox image (Python 3.12, NumPy 2.5.2, SciPy 1.17.0). |
+| `materials/` | The materials decision study: simulator and solver tasks (`rlvpm/`), experiments, analyses and figures (`scripts/`), and the saved results they read (`data/`). See `materials/README.md`. |
 
 ## Reproduction
 
@@ -277,7 +287,7 @@ campaign directory, which is not included.
   title  = {Post-training language models for scientific simulation},
   author = {Barnes, Jarrod},
   year   = {2026},
-  url    = {https://jbarnes850.github.io}
+  url    = {https://jbarnes850.github.io/2026/10/12/post-training-language-models-for-scientific-simulation/}
 }
 ```
 

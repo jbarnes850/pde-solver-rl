@@ -1,0 +1,156 @@
+{
+ "n_candidates": 144,
+ "n_lineages": 48,
+ "cells": {
+  "adapter/hint": {
+   "lineages": 8,
+   "first_attempt_check_pass": 0.0,
+   "lineage_pass_within_rounds": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "generations": 24,
+   "completion_tokens": 153173,
+   "tokens_per_verified": null,
+   "taxonomy_first_attempt": {
+    "too_slow": 3,
+    "runtime_error": 5
+   },
+   "taxonomy_all": {
+    "too_slow": 12,
+    "runtime_error": 10,
+    "other_check_failure:energy,equilibrium_x,equilibrium_y,linear": 1,
+    "undefined_name": 1
+   },
+   "sealed_pass_rate_first_attempt_scored": null
+  },
+  "adapter/plain": {
+   "lineages": 8,
+   "first_attempt_check_pass": 0.0,
+   "lineage_pass_within_rounds": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "generations": 24,
+   "completion_tokens": 131908,
+   "tokens_per_verified": null,
+   "taxonomy_first_attempt": {
+    "runtime_error": 6,
+    "api_misuse": 1,
+    "too_slow": 1
+   },
+   "taxonomy_all": {
+    "runtime_error": 9,
+    "too_slow": 14,
+    "api_misuse": 1
+   },
+   "sealed_pass_rate_first_attempt_scored": null
+  },
+  "adapter/scheme": {
+   "lineages": 8,
+   "first_attempt_check_pass": 0.0,
+   "lineage_pass_within_rounds": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "generations": 24,
+   "completion_tokens": 124923,
+   "tokens_per_verified": null,
+   "taxonomy_first_attempt": {
+    "wrong_physics_or_accuracy": 2,
+    "runtime_error": 5,
+    "too_slow": 1
+   },
+   "taxonomy_all": {
+    "wrong_physics_or_accuracy": 4,
+    "indexing": 3,
+    "runtime_error": 9,
+    "too_slow": 6,
+    "other_check_failure:energy,linear": 1,
+    "array_shape": 1
+   },
+   "sealed_pass_rate_first_attempt_scored": null
+  },
+  "base/hint": {
+   "lineages": 8,
+   "first_attempt_check_pass": 0.0,
+   "lineage_pass_within_rounds": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "generations": 24,
+   "completion_tokens": 114236,
+   "tokens_per_verified": null,
+   "taxonomy_first_attempt": {
+    "runtime_error": 7,
+    "too_slow": 1
+   },
+   "taxonomy_all": {
+    "runtime_error": 15,
+    "too_slow": 7,
+    "other_check_failure:energy,equilibrium_x,equilibrium_y,linear,mass": 1,
+    "nonfinite": 1
+   },
+   "sealed_pass_rate_first_attempt_scored": null
+  },
+  "base/plain": {
+   "lineages": 8,
+   "first_attempt_check_pass": 0.0,
+   "lineage_pass_within_rounds": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "generations": 24,
+   "completion_tokens": 83457,
+   "tokens_per_verified": null,
+   "taxonomy_first_attempt": {
+    "too_slow": 1,
+    "other_check_failure:energy,equilibrium_x,equilibrium_y,linear": 1,
+    "runtime_error": 4,
+    "api_misuse": 1,
+    "array_shape": 1
+   },
+   "taxonomy_all": {
+    "too_slow": 8,
+    "other_check_failure:energy,equilibrium_x,equilibrium_y,linear": 2,
+    "runtime_error": 12,
+    "api_misuse": 1,
+    "array_shape": 1
+   },
+   "sealed_pass_rate_first_attempt_scored": null
+  },
+  "base/scheme": {
+   "lineages": 8,
+   "first_attempt_check_pass": 0.0,
+   "lineage_pass_within_rounds": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "generations": 24,
+   "completion_tokens": 61357,
+   "tokens_per_verified": null,
+   "taxonomy_first_attempt": {
+    "indexing": 3,
+    "runtime_error": 4,
+    "too_slow": 1
+   },
+   "taxonomy_all": {
+    "indexing": 5,
+    "runtime_error": 9,
+    "array_shape": 1,
+    "other_check_failure:bounds,energy,equilibrium_x,equilibrium_y,linear": 1,
+    "other_check_failure:energy,equilibrium_x,equilibrium_y,linear": 2,
+    "too_slow": 3,
+    "other_check_failure:bounds,energy,equilibrium_x,equilibrium_y,linear,mass": 1,
+    "wrong_physics_or_accuracy": 2
+   },
+   "sealed_pass_rate_first_attempt_scored": null
+  }
+ }
+}

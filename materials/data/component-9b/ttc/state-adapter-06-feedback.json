@@ -1,0 +1,366 @@
+{
+  "arm": "adapter",
+  "lineage_seed": 2026228400,
+  "policy": "feedback",
+  "attempts": [
+    {
+      "arm": "adapter",
+      "seed": 2026228400,
+      "turn": 1,
+      "policy": "shared",
+      "lineage_seed": 2026228400,
+      "prompt_tokens": 760,
+      "completion_tokens": 2180,
+      "latency_s": 79.57225118700012,
+      "finish_reason": "stop",
+      "messages_sha256": "5f33ee37aa05df711dbe1b00bde5c5267c07d836bf69b89c5da288d4fe607794",
+      "content": "import numpy as np\nfrom numpy.fft import fftfreq, fftn, ifftn\n\ndef solver(c_batch, T, beta, h, Tc_a, Tc_b, width, dx, dy):\n    # Get grid dimensions from the first batch element\n    B, Nx, Ny = c_batch.shape\n    \n    # Initialize output array\n    mu_batch = np.zeros_like(c_batch)\n    \n    # Precompute wave numbers\n    # kx = 2*pi*fftfreq(Nx, dx), ky = 2*pi*fftfreq(Ny, dy)\n    kx = 2 * np.pi * fftfreq(Nx, d=dx)\n    ky = 2 * np.pi * fftfreq(Ny, d=dy)\n    \n    # Create meshgrid for 2D k-space\n    KX, KY = np.meshgrid(kx, ky, indexing='ij')\n    \n    # Compute the Fourier multiplier: A_hat = kx^2 / (kx^2 + ky^2)\n    # Set to zero at zero wavevector (kx=0, ky=0)\n    denom = KX**2 + KY**2\n    # Avoid division by zero at (0,0)\n    A_mult = np.where(denom == 0, 0.0, KX**2 / denom)\n    \n    # Process each batch independently\n    for b in range(B):\n        c = c_batch[b]\n        \n        # Compute Tc(c)\n        Tc_c = Tc_a + (Tc_b - Tc_a) * c\n        \n        # Compute q = 1 - T / Tc(c)\n        # Since 0 < c < 1 and assuming physical parameters, Tc_c should be positive\n        # but we add a small epsilon just in case to avoid division issues if Tc_c is very small\n        # However, problem statement doesn't specify constraints on T relative to Tc, \n        # so we proceed directly.\n        q = 1.0 - T / Tc_c\n        \n        # Compute s = (q + sqrt(q*q + width*width)) / 2\n        s = (q + np.sqrt(q*q + width*width)) / 2.0\n        \n        # Compute g = (1 - c) * sqrt(s)\n        g = (1.0 - c) * np.sqrt(s)\n        \n        # Compute mean(g)\n        mean_g = np.mean(g)\n        \n        # Compute A[g]:\n        # 1. FFT of g\n        g_hat = fftn(g)\n        # 2. Multiply by A_mult\n        # Note: g_hat shape is (Nx, Ny), A_mult is (Nx, Ny)\n        A_g_hat = g_hat * A_mult\n        # 3. IFFT to get real space A[g]\n        A_g = np.real(ifftn(A_g_hat))\n        \n        # Compute mean(g * A[g])\n        mean_g_Ag = np.mean(g * A_g)\n        \n        # Compute F_mag term: beta/2 * mean(g * A[g]) - h * mean(g)\n        # Actually the formula is: F_mag[c] = beta/2 * mean(g * A[g]) - h * mean(g)\n        # But we need the chemical potential mu defined by delta F_mag = mean(mu * delta c)\n        # This implies mu = dF_mag/dc\n        \n        # Let's derive mu = dF/dc\n        # F = (beta/2) * <g * A[g]> - h * <g>\n        # mu = dF/dc = (beta/2) * d(<g * A[g]>) / dc - h * d(<g>) / dc\n        \n        # We need to compute the variation of g with respect to c.\n        # g = (1-c) * sqrt(s)\n        # s = (q + sqrt(q^2 + w^2)) / 2, q = 1 - T/Tc(c)\n        # Tc(c) = Tc_a + (Tc_b - Tc_a) * c = Tc_a + dc_diff * c, where dc_diff = Tc_b - Tc_a\n        # Let Tc_diff = Tc_b - Tc_a\n        # Tc_c = Tc_a + Tc_diff * c\n        # q = 1 - T / (Tc_a + Tc_diff * c)\n        \n        # Chain rule:\n        # dg/dc = d/d c [ (1-c) * sqrt(s) ]\n        #        = -sqrt(s) + (1-c) * (1/(2*sqrt(s))) * ds/dc\n        # ds/dc = d/d c [ (q + sqrt(q^2 + w^2)) / 2 ]\n        #        = 1/2 * ( dq/dc + (1/(2*sqrt(q^2+w^2))) * 2q * dq/dc )\n        #        = 1/2 * dq/dc * (1 + q / sqrt(q^2+w^2))\n        #        = 1/2 * dq/dc * ( (sqrt(q^2+w^2) + q) / sqrt(q^2+w^2) )\n        # Note that s = (q + sqrt(q^2+w^2))/2, so sqrt(q^2+w^2) + q = 2s\n        # ds/dc = 1/2 * dq/dc * (2s / sqrt(q^2+w^2)) = s * dq/dc / sqrt(q^2+w^2)\n        \n        # Now dq/dc:\n        # q = 1 - T * (Tc_a + Tc_diff * c)^(-1)\n        # dq/dc = -T * (-1) * (Tc_a + Tc_diff * c)^(-2) * Tc_diff\n        #        = T * Tc_diff / (Tc_c^2)\n        \n        # So:\n        Tc_diff = Tc_b - Tc_a\n        dq_dc = T * Tc_diff / (Tc_c ** 2)\n        \n        term_inner = np.sqrt(q*q + width*width)\n        ds_dc = s * dq_dc / term_inner\n        \n        dg_dc = -np.sqrt(s) + (1.0 - c) * (ds_dc / (2.0 * np.sqrt(s)))\n        \n        # Now we need d/dc <g * A[g]>\n        # Let F1 = <g * A[g]>\n        # dF1/dc = < (dg/dc) * A[g] + g * d(A[g])/dc >\n        # A is a linear operator in Fourier space: A[g] = IFFT( A_mult * FFT(g) )\n        # d(A[g])/dc = IFFT( A_mult * FFT(dg/dc) )\n        \n        # Let g_c = dg/dc\n        g_c = dg_dc\n        \n        # Compute A[g_c]\n        g_c_hat = fftn(g_c)\n        A_gc_hat = g_c_hat * A_mult\n        A_gc = np.real(ifftn(A_gc_hat))\n        \n        # dF1/dc = < g_c * A[g] + g * A[g_c] >\n        dF1_dc = np.mean(g_c * A_g + g * A_gc)\n        \n        # dF/dc = (beta/2) * dF1_dc - h * <dg/dc>\n        dg_mean_dc = np.mean(g_c)\n        mu = (beta / 2.0) * dF1_dc - h * dg_mean_dc\n        \n        mu_batch[b] = mu\n    \n    return mu_batch\n\n```python\nimport numpy as np\nfrom numpy.fft import fftfreq, fftn, ifftn\n\ndef solver(c_batch, T, beta, h, Tc_a, Tc_b, width, dx, dy):\n    B, Nx, Ny = c_batch.shape\n    mu_batch = np.zeros_like(c_batch)\n    \n    kx = 2 * np.pi * fftfreq(Nx, d=dx)\n    ky = 2 * np.pi * fftfreq(Ny, d=dy)\n    \n    KX, KY = np.meshgrid(kx, ky, indexing='ij')\n    denom = KX**2 + KY**2\n    A_mult = np.where(denom == 0, 0.0, KX**2 / denom)\n    \n    Tc_diff = Tc_b - Tc_a\n    \n    for b in range(B):\n        c = c_batch[b]\n        Tc_c = Tc_a + Tc_diff * c\n        \n        q = 1.0 - T / Tc_c\n        s = (q + np.sqrt(q*q + width*width)) / 2.0\n        g = (1.0 - c) * np.sqrt(s)\n        \n        g_hat = fftn(g)\n        A_g_hat = g_hat * A_mult\n        A_g = np.real(ifftn(A_g_hat))\n        \n        Tc_c_sq = Tc_c ** 2\n        dq_dc = T * Tc_diff / Tc_c_sq\n        \n        term_inner = np.sqrt(q*q + width*width)\n        ds_dc = s * dq_dc / term_inner\n        dg_dc = -np.sqrt(s) + (1.0 - c) * (ds_dc / (2.0 * np.sqrt(s)))\n        \n        g_c = dg_dc\n        \n        g_c_hat = fftn(g_c)\n        A_gc_hat = g_c_hat * A_mult\n        A_gc = np.real(ifftn(A_gc_hat))\n        \n        dF1_dc = np.mean(g_c * A_g + g * A_gc)\n        dg_mean_dc = np.mean(g_c)\n        \n        mu = (beta / 2.0) * dF1_dc - h * dg_mean_dc\n        mu_batch[b] = mu\n    \n    return mu_batch\n```",
+      "code": "import numpy as np\nfrom numpy.fft import fftfreq, fftn, ifftn\n\ndef solver(c_batch, T, beta, h, Tc_a, Tc_b, width, dx, dy):\n    B, Nx, Ny = c_batch.shape\n    mu_batch = np.zeros_like(c_batch)\n    \n    kx = 2 * np.pi * fftfreq(Nx, d=dx)\n    ky = 2 * np.pi * fftfreq(Ny, d=dy)\n    \n    KX, KY = np.meshgrid(kx, ky, indexing='ij')\n    denom = KX**2 + KY**2\n    A_mult = np.where(denom == 0, 0.0, KX**2 / denom)\n    \n    Tc_diff = Tc_b - Tc_a\n    \n    for b in range(B):\n        c = c_batch[b]\n        Tc_c = Tc_a + Tc_diff * c\n        \n        q = 1.0 - T / Tc_c\n        s = (q + np.sqrt(q*q + width*width)) / 2.0\n        g = (1.0 - c) * np.sqrt(s)\n        \n        g_hat = fftn(g)\n        A_g_hat = g_hat * A_mult\n        A_g = np.real(ifftn(A_g_hat))\n        \n        Tc_c_sq = Tc_c ** 2\n        dq_dc = T * Tc_diff / Tc_c_sq\n        \n        term_inner = np.sqrt(q*q + width*width)\n        ds_dc = s * dq_dc / term_inner\n        dg_dc = -np.sqrt(s) + (1.0 - c) * (ds_dc / (2.0 * np.sqrt(s)))\n        \n        g_c = dg_dc\n        \n        g_c_hat = fftn(g_c)\n        A_gc_hat = g_c_hat * A_mult\n        A_gc = np.real(ifftn(A_gc_hat))\n        \n        dF1_dc = np.mean(g_c * A_g + g * A_gc)\n        dg_mean_dc = np.mean(g_c)\n        \n        mu = (beta / 2.0) * dF1_dc - h * dg_mean_dc\n        mu_batch[b] = mu\n    \n    return mu_batch",
+      "code_sha256": "a45a18ca816266ad7195d5fb0b2ef1b4e127997cf31bee77d575818fe70db937",
+      "check": {
+        "passed": false,
+        "n_passed": 2,
+        "cases": [
+          {
+            "case": "mixed",
+            "ok": true,
+            "error": null,
+            "stderr": "/work/candidate.py:13: RuntimeWarning: invalid value encountered in divide\n  A_mult = np.where(denom == 0, 0.0, KX**2 / denom)\n",
+            "seconds": 0.4160276520415209,
+            "max_relative_directional_error": 2.5181288569307867,
+            "passed": false
+          },
+          {
+            "case": "self_energy_only",
+            "ok": true,
+            "error": null,
+            "stderr": "/work/candidate.py:13: RuntimeWarning: invalid value encountered in divide\n  A_mult = np.where(denom == 0, 0.0, KX**2 / denom)\n",
+            "seconds": 0.418479697953444,
+            "max_relative_directional_error": 6.75084552792271,
+            "passed": false
+          },
+          {
+            "case": "applied_field_only",
+            "ok": true,
+            "error": null,
+            "stderr": "/work/candidate.py:13: RuntimeWarning: invalid value encountered in divide\n  A_mult = np.where(denom == 0, 0.0, KX**2 / denom)\n",
+            "seconds": 0.41592784301610664,
+            "max_relative_directional_error": 2.6880078417413404,
+            "passed": false
+          },
+          {
+            "case": "uniform",
+            "ok": true,
+            "error": null,
+            "stderr": "/work/candidate.py:13: RuntimeWarning: invalid value encountered in divide\n  A_mult = np.where(denom == 0, 0.0, KX**2 / denom)\n",
+            "seconds": 0.3659384970087558,
+            "max_relative_directional_error": 1.7294718514205697e-08,
+            "passed": true
+          },
+          {
+            "case": "zero_couplings",
+            "ok": true,
+            "error": null,
+            "stderr": "/work/candidate.py:13: RuntimeWarning: invalid value encountered in divide\n  A_mult = np.where(denom == 0, 0.0, KX**2 / denom)\n",
+            "seconds": 0.36638289998518303,
+            "max_relative_directional_error": 0.0,
+            "passed": true
+          }
+        ],
+        "feedback": "{'case': 'mixed', 'ok': True, 'error': None, 'stderr': '/work/candidate.py:13: RuntimeWarning: invalid value encountered in divide\\n  A_mult = np.where(denom == 0, 0.0, KX**2 / denom)\\n', 'seconds': 0.4160276520415209, 'max_relative_directional_error': 2.5181288569307867, 'passed': False}\n{'case': 'self_energy_only', 'ok': True, 'error': None, 'stderr': '/work/candidate.py:13: RuntimeWarning: invalid value encountered in divide\\n  A_mult = np.where(denom == 0, 0.0, KX**2 / denom)\\n', 'seconds': 0.418479697953444, 'max_relative_directional_error': 6.75084552792271, 'passed': False}\n{'case': 'applied_field_only', 'ok': True, 'error': None, 'stderr': '/work/candidate.py:13: RuntimeWarning: invalid value encountered in divide\\n  A_mult = np.where(denom == 0, 0.0, KX**2 / denom)\\n', 'seconds': 0.41592784301610664, 'max_relative_directional_error': 2.6880078417413404, 'passed': False}"
+      },
+      "feedback": "{'case': 'mixed', 'ok': True, 'error': None, 'stderr': '/work/candidate.py:13: RuntimeWarning: invalid value encountered in divide\\n  A_mult = np.where(denom == 0, 0.0, KX**2 / denom)\\n', 'seconds': 0.4160276520415209, 'max_relative_directional_error': 2.5181288569307867, 'passed': False}\n{'case': 'self_energy_only', 'ok': True, 'error': None, 'stderr': '/work/candidate.py:13: RuntimeWarning: invalid value encountered in divide\\n  A_mult = np.where(denom == 0, 0.0, KX**2 / denom)\\n', 'seconds': 0.418479697953444, 'max_relative_directional_error': 6.75084552792271, 'passed': False}\n{'case': 'applied_field_only', 'ok': True, 'error': None, 'stderr': '/work/candidate.py:13: RuntimeWarning: invalid value encountered in divide\\n  A_mult = np.where(denom == 0, 0.0, KX**2 / denom)\\n', 'seconds': 0.41592784301610664, 'max_relative_directional_error': 2.6880078417413404, 'passed': False}",
+      "passed": false,
+      "verifier_executions": 5,
+      "verifier_seconds": 1.9827565900050104
+    },
+    {
+      "arm": "adapter",
+      "seed": 2026236319,
+      "turn": 2,
+      "policy": "feedback",
+      "lineage_seed": 2026228400,
+      "prompt_tokens": 3319,
+      "completion_tokens": 1124,
+      "latency_s": 50.256825576999745,
+      "finish_reason": "stop",
+      "messages_sha256": "9da6fd246445ca20e4739e1f6ecf5e71350b9a5c5cf1c42b999221b894b2057e",
+      "content": "import numpy as np\nfrom numpy.fft import fftfreq, fftn, ifftn\n\ndef solver(c_batch, T, beta, h, Tc_a, Tc_b, width, dx, dy):\n    B, Nx, Ny = c_batch.shape\n    mu_batch = np.zeros_like(c_batch, dtype=np.float64)\n    \n    # Precompute wave numbers\n    kx = 2 * np.pi * fftfreq(Nx, d=dx)\n    ky = 2 * np.pi * fftfreq(Ny, d=dy)\n    \n    # Create meshgrid for 2D k-space\n    KX, KY = np.meshgrid(kx, ky, indexing='ij')\n    \n    # Compute the Fourier multiplier: A_hat = kx^2 / (kx^2 + ky^2)\n    # Set to zero at zero wavevector. Use a small epsilon to avoid division by zero warnings\n    # and handle the case where both are exactly zero.\n    denom = KX**2 + KY**2\n    # The condition denom == 0 is true only at (0,0) for integer freqs.\n    # Using a small tolerance or direct assignment for (0,0).\n    # Since kx and ky are from fftfreq, they are floats. 0.0 + 0.0 == 0.0 is True.\n    A_mult = np.zeros_like(KX, dtype=np.float64)\n    mask = denom > 1e-15\n    A_mult[mask] = KX[mask]**2 / denom[mask]\n    # Ensure (0,0) is 0\n    A_mult[0, 0] = 0.0\n    \n    Tc_diff = Tc_b - Tc_a\n    \n    for b in range(B):\n        c = c_batch[b]\n        \n        # Compute Tc(c)\n        Tc_c = Tc_a + Tc_diff * c\n        \n        # Compute q = 1 - T / Tc(c)\n        # Handle potential division by zero if Tc_c is 0, though problem says 0<c<1 and Tc parameters likely positive.\n        # If Tc_c is very small, q could be large. We proceed as defined.\n        with np.errstate(divide='ignore', invalid='ignore'):\n            q = 1.0 - T / Tc_c\n        \n        # Compute s = (q + sqrt(q*q + width*width)) / 2\n        s = (q + np.sqrt(q*q + width*width)) / 2.0\n        \n        # Compute g = (1 - c) * sqrt(s)\n        g = (1.0 - c) * np.sqrt(s)\n        \n        # Compute A[g]\n        g_hat = fftn(g)\n        A_g_hat = g_hat * A_mult\n        A_g = np.real(ifftn(A_g_hat))\n        \n        # Derivatives with respect to c\n        # dq/dc = T * (Tc_b - Tc_a) / Tc_c^2\n        # Avoid division by zero in derivative if Tc_c is 0\n        with np.errstate(divide='ignore', invalid='ignore'):\n            Tc_c_safe = np.where(Tc_c == 0, 1e-15, Tc_c)\n            dq_dc = T * Tc_diff / (Tc_c_safe ** 2)\n        \n        term_inner = np.sqrt(q*q + width*width)\n        # Avoid sqrt of negative if q is complex due to inf/nan, but inputs are real.\n        # If q is inf, term_inner is inf.\n        with np.errstate(invalid='ignore'):\n            ds_dc = s * dq_dc / term_inner\n            # dg/dc = -sqrt(s) + (1-c) * ds_dc / (2*sqrt(s))\n            s_sqrt = np.sqrt(s)\n            # Handle s=0 case for division\n            s_sqrt_safe = np.where(s_sqrt == 0, 1e-15, s_sqrt)\n            dg_dc = -s_sqrt + (1.0 - c) * (ds_dc / (2.0 * s_sqrt_safe))\n        \n        # Compute d(A[g])/dc\n        # Let g_c = dg/dc\n        # A[g_c] = IFFT( A_mult * FFT(g_c) )\n        g_c = dg_dc\n        g_c_hat = fftn(g_c)\n        A_gc_hat = g_c_hat * A_mult\n        A_gc = np.real(ifftn(A_gc_hat))\n        \n        # dF1/dc = mean( g_c * A[g] + g * A[g_c] )\n        dF1_dc = np.mean(g_c * A_g + g * A_gc)\n        \n        # d(mean(g))/dc = mean(dg/dc)\n        dg_mean_dc = np.mean(g_c)\n        \n        # mu = (beta/2) * dF1_dc - h * dg_mean_dc\n        mu = (beta / 2.0) * dF1_dc - h * dg_mean_dc\n        \n        mu_batch[b] = mu\n    \n    return mu_batch",
+      "code": "import numpy as np\nfrom numpy.fft import fftfreq, fftn, ifftn\n\ndef solver(c_batch, T, beta, h, Tc_a, Tc_b, width, dx, dy):\n    B, Nx, Ny = c_batch.shape\n    mu_batch = np.zeros_like(c_batch, dtype=np.float64)\n    \n    # Precompute wave numbers\n    kx = 2 * np.pi * fftfreq(Nx, d=dx)\n    ky = 2 * np.pi * fftfreq(Ny, d=dy)\n    \n    # Create meshgrid for 2D k-space\n    KX, KY = np.meshgrid(kx, ky, indexing='ij')\n    \n    # Compute the Fourier multiplier: A_hat = kx^2 / (kx^2 + ky^2)\n    # Set to zero at zero wavevector. Use a small epsilon to avoid division by zero warnings\n    # and handle the case where both are exactly zero.\n    denom = KX**2 + KY**2\n    # The condition denom == 0 is true only at (0,0) for integer freqs.\n    # Using a small tolerance or direct assignment for (0,0).\n    # Since kx and ky are from fftfreq, they are floats. 0.0 + 0.0 == 0.0 is True.\n    A_mult = np.zeros_like(KX, dtype=np.float64)\n    mask = denom > 1e-15\n    A_mult[mask] = KX[mask]**2 / denom[mask]\n    # Ensure (0,0) is 0\n    A_mult[0, 0] = 0.0\n    \n    Tc_diff = Tc_b - Tc_a\n    \n    for b in range(B):\n        c = c_batch[b]\n        \n        # Compute Tc(c)\n        Tc_c = Tc_a + Tc_diff * c\n        \n        # Compute q = 1 - T / Tc(c)\n        # Handle potential division by zero if Tc_c is 0, though problem says 0<c<1 and Tc parameters likely positive.\n        # If Tc_c is very small, q could be large. We proceed as defined.\n        with np.errstate(divide='ignore', invalid='ignore'):\n            q = 1.0 - T / Tc_c\n        \n        # Compute s = (q + sqrt(q*q + width*width)) / 2\n        s = (q + np.sqrt(q*q + width*width)) / 2.0\n        \n        # Compute g = (1 - c) * sqrt(s)\n        g = (1.0 - c) * np.sqrt(s)\n        \n        # Compute A[g]\n        g_hat = fftn(g)\n        A_g_hat = g_hat * A_mult\n        A_g = np.real(ifftn(A_g_hat))\n        \n        # Derivatives with respect to c\n        # dq/dc = T * (Tc_b - Tc_a) / Tc_c^2\n        # Avoid division by zero in derivative if Tc_c is 0\n        with np.errstate(divide='ignore', invalid='ignore'):\n            Tc_c_safe = np.where(Tc_c == 0, 1e-15, Tc_c)\n            dq_dc = T * Tc_diff / (Tc_c_safe ** 2)\n        \n        term_inner = np.sqrt(q*q + width*width)\n        # Avoid sqrt of negative if q is complex due to inf/nan, but inputs are real.\n        # If q is inf, term_inner is inf.\n        with np.errstate(invalid='ignore'):\n            ds_dc = s * dq_dc / term_inner\n            # dg/dc = -sqrt(s) + (1-c) * ds_dc / (2*sqrt(s))\n            s_sqrt = np.sqrt(s)\n            # Handle s=0 case for division\n            s_sqrt_safe = np.where(s_sqrt == 0, 1e-15, s_sqrt)\n            dg_dc = -s_sqrt + (1.0 - c) * (ds_dc / (2.0 * s_sqrt_safe))\n        \n        # Compute d(A[g])/dc\n        # Let g_c = dg/dc\n        # A[g_c] = IFFT( A_mult * FFT(g_c) )\n        g_c = dg_dc\n        g_c_hat = fftn(g_c)\n        A_gc_hat = g_c_hat * A_mult\n        A_gc = np.real(ifftn(A_gc_hat))\n        \n        # dF1/dc = mean( g_c * A[g] + g * A[g_c] )\n        dF1_dc = np.mean(g_c * A_g + g * A_gc)\n        \n        # d(mean(g))/dc = mean(dg/dc)\n        dg_mean_dc = np.mean(g_c)\n        \n        # mu = (beta/2) * dF1_dc - h * dg_mean_dc\n        mu = (beta / 2.0) * dF1_dc - h * dg_mean_dc\n        \n        mu_batch[b] = mu\n    \n    return mu_batch",
+      "code_sha256": "4419ab3fd99a21284c0472daea0f9da28b8abfa6fc0c7b1e4c5a39255950c747",
+      "check": {
+        "passed": false,
+        "n_passed": 2,
+        "cases": [
+          {
+            "case": "mixed",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.31611615302972496,
+            "max_relative_directional_error": 2.5181288569307867,
+            "passed": false
+          },
+          {
+            "case": "self_energy_only",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.46616770600667223,
+            "max_relative_directional_error": 6.75084552792271,
+            "passed": false
+          },
+          {
+            "case": "applied_field_only",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.5178756159730256,
+            "max_relative_directional_error": 2.6880078417413404,
+            "passed": false
+          },
+          {
+            "case": "uniform",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.3659030909766443,
+            "max_relative_directional_error": 1.7294718514205697e-08,
+            "passed": true
+          },
+          {
+            "case": "zero_couplings",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.4164004169870168,
+            "max_relative_directional_error": 0.0,
+            "passed": true
+          }
+        ],
+        "feedback": "{'case': 'mixed', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.31611615302972496, 'max_relative_directional_error': 2.5181288569307867, 'passed': False}\n{'case': 'self_energy_only', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.46616770600667223, 'max_relative_directional_error': 6.75084552792271, 'passed': False}\n{'case': 'applied_field_only', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.5178756159730256, 'max_relative_directional_error': 2.6880078417413404, 'passed': False}"
+      },
+      "feedback": "{'case': 'mixed', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.31611615302972496, 'max_relative_directional_error': 2.5181288569307867, 'passed': False}\n{'case': 'self_energy_only', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.46616770600667223, 'max_relative_directional_error': 6.75084552792271, 'passed': False}\n{'case': 'applied_field_only', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.5178756159730256, 'max_relative_directional_error': 2.6880078417413404, 'passed': False}",
+      "passed": false,
+      "verifier_executions": 5,
+      "verifier_seconds": 2.082462982973084
+    },
+    {
+      "arm": "adapter",
+      "seed": 2026244238,
+      "turn": 3,
+      "policy": "feedback",
+      "lineage_seed": 2026228400,
+      "prompt_tokens": 2144,
+      "completion_tokens": 1416,
+      "latency_s": 56.82266227900027,
+      "finish_reason": "stop",
+      "messages_sha256": "585f332820e30f2793722f90462ea98ec56e1b0a46722a60df24d7efa48f2b0a",
+      "content": "import numpy as np\nfrom numpy.fft import fftfreq, fftn, ifftn\n\ndef solver(c_batch, T, beta, h, Tc_a, Tc_b, width, dx, dy):\n    B, Nx, Ny = c_batch.shape\n    mu_batch = np.zeros_like(c_batch, dtype=np.float64)\n    \n    # Precompute wave numbers\n    kx = 2 * np.pi * fftfreq(Nx, d=dx)\n    ky = 2 * np.pi * fftfreq(Ny, d=dy)\n    \n    # Create meshgrid for 2D k-space\n    KX, KY = np.meshgrid(kx, ky, indexing='ij')\n    \n    # Compute the Fourier multiplier: A_hat = kx^2 / (kx^2 + ky^2)\n    # Set to zero at zero wavevector.\n    denom = KX**2 + KY**2\n    A_mult = np.zeros_like(KX, dtype=np.float64)\n    # Avoid division by zero at (0,0)\n    mask = denom > 1e-15\n    A_mult[mask] = KX[mask]**2 / denom[mask]\n    A_mult[0, 0] = 0.0\n    \n    Tc_diff = Tc_b - Tc_a\n    \n    for b in range(B):\n        c = c_batch[b]\n        \n        # Compute Tc(c)\n        Tc_c = Tc_a + Tc_diff * c\n        \n        # Compute q = 1 - T / Tc(c)\n        # Handle potential division by zero\n        with np.errstate(divide='ignore', invalid='ignore'):\n            q = 1.0 - T / Tc_c\n        \n        # Compute s = (q + sqrt(q*q + width*width)) / 2\n        # Ensure argument to sqrt is non-negative\n        term_sq = q*q + width*width\n        # If term_sq < 0 due to numerical issues or complex q, clamp to 0\n        term_sq_safe = np.maximum(term_sq, 0.0)\n        s = (q + np.sqrt(term_sq_safe)) / 2.0\n        \n        # Compute g = (1 - c) * sqrt(s)\n        s_sqrt = np.sqrt(s)\n        g = (1.0 - c) * s_sqrt\n        \n        # Compute g_c = dg/dc\n        # dq/dc = T * Tc_diff / Tc_c^2\n        # Handle Tc_c = 0\n        Tc_c_safe = np.where(np.abs(Tc_c) < 1e-15, np.sign(Tc_c)*1e-15, Tc_c)\n        dq_dc = T * Tc_diff / (Tc_c_safe ** 2)\n        \n        # ds/dc = ds/dq * dq/dc\n        # s = (q + sqrt(q^2 + w^2))/2\n        # ds/dq = (1 + q/sqrt(q^2+w^2)) / 2 = (sqrt + q) / (2*sqrt)\n        # Note: if s=0, then q = -width (assuming width>0), then sqrt=0.\n        # Let's use the derivative formula directly where possible or limit.\n        # ds/dq = 0.5 * (1 + q / sqrt(q^2 + width^2))\n        # But if q^2 + width^2 is 0 (only if width=0), then handle separately. Assume width>0.\n        term_sqrt = np.sqrt(term_sq_safe)\n        if np.any(term_sqrt == 0):\n            # If term_sqrt is 0, then q=0 and width=0? Or q=-width and width=0.\n            # If width > 0, term_sqrt >= width > 0. So term_sqrt == 0 implies width=0 and q=0.\n            # If width=0, s = (q+|q|)/2. If q>=0, s=q, ds/dq=1. If q<0, s=0, ds/dq=0.\n            # Assuming width > 0 based on problem context (magnetic width parameter usually >0).\n            # If width=0, we can't divide by it in the general formula if s=0.\n            # Let's compute ds/dq safely.\n            ds_dq = np.where(term_sqrt > 1e-15, 0.5 * (1.0 + q / term_sqrt), np.where(q >= 0, 1.0, 0.0))\n        else:\n            ds_dq = 0.5 * (1.0 + q / term_sqrt)\n        \n        ds_dc = ds_dq * dq_dc\n        \n        # dg/dc = -sqrt(s) + (1-c) * (ds_dc / (2*sqrt(s)))\n        # Handle s=0\n        s_sqrt_safe = np.where(s_sqrt < 1e-15, np.sign(s_sqrt)*1e-15, s_sqrt)\n        dg_dc = -s_sqrt + (1.0 - c) * (ds_dc / (2.0 * s_sqrt_safe))\n        \n        # Compute A[g]\n        g_hat = fftn(g)\n        A_g_hat = g_hat * A_mult\n        A_g = np.real(ifftn(A_g_hat))\n        \n        # Compute d(A[g])/dc = A[dg/dc]\n        g_c_hat = fftn(dg_dc)\n        A_gc_hat = g_c_hat * A_mult\n        A_gc = np.real(ifftn(A_gc_hat))\n        \n        # F_mag = beta/2 * mean(g * A[g]) - h * mean(g)\n        # mu = delta F / delta c = beta/2 * ( <g_c A[g]> + <g A_gc> ) - h * <g_c>\n        # Note: derivative of mean(g A[g]) is mean( (dg/dc) A[g] + g dA[g]/dc )\n        \n        term1 = np.mean(dg_dc * A_g)\n        term2 = np.mean(g * A_gc)\n        dF1_dc = term1 + term2\n        \n        dg_mean_dc = np.mean(dg_dc)\n        \n        mu = (beta / 2.0) * dF1_dc - h * dg_mean_dc\n        \n        mu_batch[b] = mu\n    \n    return mu_batch",
+      "code": "import numpy as np\nfrom numpy.fft import fftfreq, fftn, ifftn\n\ndef solver(c_batch, T, beta, h, Tc_a, Tc_b, width, dx, dy):\n    B, Nx, Ny = c_batch.shape\n    mu_batch = np.zeros_like(c_batch, dtype=np.float64)\n    \n    # Precompute wave numbers\n    kx = 2 * np.pi * fftfreq(Nx, d=dx)\n    ky = 2 * np.pi * fftfreq(Ny, d=dy)\n    \n    # Create meshgrid for 2D k-space\n    KX, KY = np.meshgrid(kx, ky, indexing='ij')\n    \n    # Compute the Fourier multiplier: A_hat = kx^2 / (kx^2 + ky^2)\n    # Set to zero at zero wavevector.\n    denom = KX**2 + KY**2\n    A_mult = np.zeros_like(KX, dtype=np.float64)\n    # Avoid division by zero at (0,0)\n    mask = denom > 1e-15\n    A_mult[mask] = KX[mask]**2 / denom[mask]\n    A_mult[0, 0] = 0.0\n    \n    Tc_diff = Tc_b - Tc_a\n    \n    for b in range(B):\n        c = c_batch[b]\n        \n        # Compute Tc(c)\n        Tc_c = Tc_a + Tc_diff * c\n        \n        # Compute q = 1 - T / Tc(c)\n        # Handle potential division by zero\n        with np.errstate(divide='ignore', invalid='ignore'):\n            q = 1.0 - T / Tc_c\n        \n        # Compute s = (q + sqrt(q*q + width*width)) / 2\n        # Ensure argument to sqrt is non-negative\n        term_sq = q*q + width*width\n        # If term_sq < 0 due to numerical issues or complex q, clamp to 0\n        term_sq_safe = np.maximum(term_sq, 0.0)\n        s = (q + np.sqrt(term_sq_safe)) / 2.0\n        \n        # Compute g = (1 - c) * sqrt(s)\n        s_sqrt = np.sqrt(s)\n        g = (1.0 - c) * s_sqrt\n        \n        # Compute g_c = dg/dc\n        # dq/dc = T * Tc_diff / Tc_c^2\n        # Handle Tc_c = 0\n        Tc_c_safe = np.where(np.abs(Tc_c) < 1e-15, np.sign(Tc_c)*1e-15, Tc_c)\n        dq_dc = T * Tc_diff / (Tc_c_safe ** 2)\n        \n        # ds/dc = ds/dq * dq/dc\n        # s = (q + sqrt(q^2 + w^2))/2\n        # ds/dq = (1 + q/sqrt(q^2+w^2)) / 2 = (sqrt + q) / (2*sqrt)\n        # Note: if s=0, then q = -width (assuming width>0), then sqrt=0.\n        # Let's use the derivative formula directly where possible or limit.\n        # ds/dq = 0.5 * (1 + q / sqrt(q^2 + width^2))\n        # But if q^2 + width^2 is 0 (only if width=0), then handle separately. Assume width>0.\n        term_sqrt = np.sqrt(term_sq_safe)\n        if np.any(term_sqrt == 0):\n            # If term_sqrt is 0, then q=0 and width=0? Or q=-width and width=0.\n            # If width > 0, term_sqrt >= width > 0. So term_sqrt == 0 implies width=0 and q=0.\n            # If width=0, s = (q+|q|)/2. If q>=0, s=q, ds/dq=1. If q<0, s=0, ds/dq=0.\n            # Assuming width > 0 based on problem context (magnetic width parameter usually >0).\n            # If width=0, we can't divide by it in the general formula if s=0.\n            # Let's compute ds/dq safely.\n            ds_dq = np.where(term_sqrt > 1e-15, 0.5 * (1.0 + q / term_sqrt), np.where(q >= 0, 1.0, 0.0))\n        else:\n            ds_dq = 0.5 * (1.0 + q / term_sqrt)\n        \n        ds_dc = ds_dq * dq_dc\n        \n        # dg/dc = -sqrt(s) + (1-c) * (ds_dc / (2*sqrt(s)))\n        # Handle s=0\n        s_sqrt_safe = np.where(s_sqrt < 1e-15, np.sign(s_sqrt)*1e-15, s_sqrt)\n        dg_dc = -s_sqrt + (1.0 - c) * (ds_dc / (2.0 * s_sqrt_safe))\n        \n        # Compute A[g]\n        g_hat = fftn(g)\n        A_g_hat = g_hat * A_mult\n        A_g = np.real(ifftn(A_g_hat))\n        \n        # Compute d(A[g])/dc = A[dg/dc]\n        g_c_hat = fftn(dg_dc)\n        A_gc_hat = g_c_hat * A_mult\n        A_gc = np.real(ifftn(A_gc_hat))\n        \n        # F_mag = beta/2 * mean(g * A[g]) - h * mean(g)\n        # mu = delta F / delta c = beta/2 * ( <g_c A[g]> + <g A_gc> ) - h * <g_c>\n        # Note: derivative of mean(g A[g]) is mean( (dg/dc) A[g] + g dA[g]/dc )\n        \n        term1 = np.mean(dg_dc * A_g)\n        term2 = np.mean(g * A_gc)\n        dF1_dc = term1 + term2\n        \n        dg_mean_dc = np.mean(dg_dc)\n        \n        mu = (beta / 2.0) * dF1_dc - h * dg_mean_dc\n        \n        mu_batch[b] = mu\n    \n    return mu_batch",
+      "code_sha256": "aa58773bd771d13b1167298941a7a281fb1261f6907e1774255b6a5dac68cba2",
+      "check": {
+        "passed": false,
+        "n_passed": 2,
+        "cases": [
+          {
+            "case": "mixed",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.4657120239571668,
+            "max_relative_directional_error": 2.5181288569307863,
+            "passed": false
+          },
+          {
+            "case": "self_energy_only",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.41547899501165375,
+            "max_relative_directional_error": 6.750845527922708,
+            "passed": false
+          },
+          {
+            "case": "applied_field_only",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.41601048602024093,
+            "max_relative_directional_error": 2.6880078417413404,
+            "passed": false
+          },
+          {
+            "case": "uniform",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.46674521500244737,
+            "max_relative_directional_error": 1.7294718918828727e-08,
+            "passed": true
+          },
+          {
+            "case": "zero_couplings",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.4660973710124381,
+            "max_relative_directional_error": 0.0,
+            "passed": true
+          }
+        ],
+        "feedback": "{'case': 'mixed', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.4657120239571668, 'max_relative_directional_error': 2.5181288569307863, 'passed': False}\n{'case': 'self_energy_only', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.41547899501165375, 'max_relative_directional_error': 6.750845527922708, 'passed': False}\n{'case': 'applied_field_only', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.41601048602024093, 'max_relative_directional_error': 2.6880078417413404, 'passed': False}"
+      },
+      "feedback": "{'case': 'mixed', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.4657120239571668, 'max_relative_directional_error': 2.5181288569307863, 'passed': False}\n{'case': 'self_energy_only', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.41547899501165375, 'max_relative_directional_error': 6.750845527922708, 'passed': False}\n{'case': 'applied_field_only', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.41601048602024093, 'max_relative_directional_error': 2.6880078417413404, 'passed': False}",
+      "passed": false,
+      "verifier_executions": 5,
+      "verifier_seconds": 2.230044091003947
+    },
+    {
+      "arm": "adapter",
+      "seed": 2026252157,
+      "turn": 4,
+      "policy": "feedback",
+      "lineage_seed": 2026228400,
+      "prompt_tokens": 2432,
+      "completion_tokens": 1267,
+      "latency_s": 52.52099628499991,
+      "finish_reason": "stop",
+      "messages_sha256": "9ce127bd13aaf536c41f0452e4ba5bef4135144c1437fa896d7dcf56425a8eff",
+      "content": "import numpy as np\nfrom numpy.fft import fftfreq, fftn, ifftn\n\ndef solver(c_batch, T, beta, h, Tc_a, Tc_b, width, dx, dy):\n    B, Nx, Ny = c_batch.shape\n    mu_batch = np.zeros_like(c_batch, dtype=np.float64)\n    \n    # Precompute wave numbers\n    kx = 2 * np.pi * fftfreq(Nx, d=dx)\n    ky = 2 * np.pi * fftfreq(Ny, d=dy)\n    \n    # Create meshgrid for 2D k-space\n    KX, KY = np.meshgrid(kx, ky, indexing='ij')\n    \n    # Compute the Fourier multiplier: A_hat = kx^2 / (kx^2 + ky^2)\n    # Set to zero at zero wavevector.\n    denom = KX**2 + KY**2\n    A_mult = np.zeros_like(KX, dtype=np.float64)\n    # Avoid division by zero at (0,0)\n    mask = denom > 1e-15\n    A_mult[mask] = KX[mask]**2 / denom[mask]\n    # Ensure (0,0) is exactly zero\n    A_mult[0, 0] = 0.0\n    \n    Tc_diff = Tc_b - Tc_a\n\n    for b in range(B):\n        c = c_batch[b]\n        \n        # Compute Tc(c)\n        Tc_c = Tc_a + Tc_diff * c\n        \n        # Compute q = 1 - T / Tc(c)\n        with np.errstate(divide='ignore', invalid='ignore'):\n            q = 1.0 - T / Tc_c\n        \n        # Compute s = (q + sqrt(q*q + width*width)) / 2\n        term_sq = q*q + width*width\n        term_sq_safe = np.maximum(term_sq, 0.0)\n        s = (q + np.sqrt(term_sq_safe)) / 2.0\n        \n        # Compute g = (1 - c) * sqrt(s)\n        s_sqrt = np.sqrt(s)\n        g = (1.0 - c) * s_sqrt\n        \n        # Compute derivatives w.r.t c\n        \n        # dq/dc = -T * (-Tc_diff) / Tc_c^2 = T * Tc_diff / Tc_c^2\n        # Handle Tc_c near 0\n        Tc_c_safe = np.where(np.abs(Tc_c) < 1e-15, np.sign(Tc_c)*1e-15, Tc_c)\n        dq_dc = T * Tc_diff / (Tc_c_safe ** 2)\n        \n        # ds/dc = ds/dq * dq/dc\n        # s = (q + sqrt(q^2 + w^2))/2\n        # ds/dq = 0.5 * (1 + q / sqrt(q^2 + w^2))\n        term_sqrt = np.sqrt(term_sq_safe)\n        # If term_sqrt is 0, we need to handle carefully. \n        # If width > 0, term_sqrt >= width > 0. If width = 0, term_sqrt = |q|.\n        # Assuming width is typically positive. If width=0 and q=0, ds/dq is undefined/limit.\n        # Let's compute safely.\n        if width == 0:\n            # s = (q + |q|)/2. If q>=0, s=q, ds/dq=1. If q<0, s=0, ds/dq=0.\n            ds_dq = np.where(q >= 0, 1.0, 0.0)\n        else:\n            # term_sqrt >= width > 0\n            ds_dq = 0.5 * (1.0 + q / term_sqrt)\n        \n        ds_dc = ds_dq * dq_dc\n        \n        # dg/dc = d/dc [(1-c)sqrt(s)] = -sqrt(s) + (1-c) * (1/(2*sqrt(s))) * ds/dc\n        # Handle s=0 (which implies s_sqrt=0)\n        s_sqrt_safe = np.where(s_sqrt < 1e-15, np.sign(s_sqrt)*1e-15, s_sqrt)\n        dg_dc = -s_sqrt + (1.0 - c) * (ds_dc / (2.0 * s_sqrt_safe))\n        \n        # Compute A[g]\n        g_hat = fftn(g)\n        A_g_hat = g_hat * A_mult\n        A_g = np.real(ifftn(A_g_hat))\n        \n        # Compute A[dg/dc]\n        dg_c_hat = fftn(dg_dc)\n        A_dg_c_hat = dg_c_hat * A_mult\n        A_dg_c = np.real(ifftn(A_dg_c_hat))\n        \n        # The functional is F = beta/2 * mean(g * A[g]) - h * mean(g)\n        # Variation: delta F = mean( (beta/2) * [ (delta g) A[g] + g (delta A[g]) ] ) - mean( h delta g )\n        # Here delta g = dg_dc * delta c\n        # So mu = beta/2 * mean( dg_dc * A[g] + g * A[dg_dc] ) - h * mean(dg_dc)\n        \n        term_mean_1 = np.mean(dg_dc * A_g)\n        term_mean_2 = np.mean(g * A_dg_c)\n        mu_val = (beta / 2.0) * (term_mean_1 + term_mean_2) - h * np.mean(dg_dc)\n        \n        mu_batch[b] = mu_val\n    \n    return mu_batch",
+      "code": "import numpy as np\nfrom numpy.fft import fftfreq, fftn, ifftn\n\ndef solver(c_batch, T, beta, h, Tc_a, Tc_b, width, dx, dy):\n    B, Nx, Ny = c_batch.shape\n    mu_batch = np.zeros_like(c_batch, dtype=np.float64)\n    \n    # Precompute wave numbers\n    kx = 2 * np.pi * fftfreq(Nx, d=dx)\n    ky = 2 * np.pi * fftfreq(Ny, d=dy)\n    \n    # Create meshgrid for 2D k-space\n    KX, KY = np.meshgrid(kx, ky, indexing='ij')\n    \n    # Compute the Fourier multiplier: A_hat = kx^2 / (kx^2 + ky^2)\n    # Set to zero at zero wavevector.\n    denom = KX**2 + KY**2\n    A_mult = np.zeros_like(KX, dtype=np.float64)\n    # Avoid division by zero at (0,0)\n    mask = denom > 1e-15\n    A_mult[mask] = KX[mask]**2 / denom[mask]\n    # Ensure (0,0) is exactly zero\n    A_mult[0, 0] = 0.0\n    \n    Tc_diff = Tc_b - Tc_a\n\n    for b in range(B):\n        c = c_batch[b]\n        \n        # Compute Tc(c)\n        Tc_c = Tc_a + Tc_diff * c\n        \n        # Compute q = 1 - T / Tc(c)\n        with np.errstate(divide='ignore', invalid='ignore'):\n            q = 1.0 - T / Tc_c\n        \n        # Compute s = (q + sqrt(q*q + width*width)) / 2\n        term_sq = q*q + width*width\n        term_sq_safe = np.maximum(term_sq, 0.0)\n        s = (q + np.sqrt(term_sq_safe)) / 2.0\n        \n        # Compute g = (1 - c) * sqrt(s)\n        s_sqrt = np.sqrt(s)\n        g = (1.0 - c) * s_sqrt\n        \n        # Compute derivatives w.r.t c\n        \n        # dq/dc = -T * (-Tc_diff) / Tc_c^2 = T * Tc_diff / Tc_c^2\n        # Handle Tc_c near 0\n        Tc_c_safe = np.where(np.abs(Tc_c) < 1e-15, np.sign(Tc_c)*1e-15, Tc_c)\n        dq_dc = T * Tc_diff / (Tc_c_safe ** 2)\n        \n        # ds/dc = ds/dq * dq/dc\n        # s = (q + sqrt(q^2 + w^2))/2\n        # ds/dq = 0.5 * (1 + q / sqrt(q^2 + w^2))\n        term_sqrt = np.sqrt(term_sq_safe)\n        # If term_sqrt is 0, we need to handle carefully. \n        # If width > 0, term_sqrt >= width > 0. If width = 0, term_sqrt = |q|.\n        # Assuming width is typically positive. If width=0 and q=0, ds/dq is undefined/limit.\n        # Let's compute safely.\n        if width == 0:\n            # s = (q + |q|)/2. If q>=0, s=q, ds/dq=1. If q<0, s=0, ds/dq=0.\n            ds_dq = np.where(q >= 0, 1.0, 0.0)\n        else:\n            # term_sqrt >= width > 0\n            ds_dq = 0.5 * (1.0 + q / term_sqrt)\n        \n        ds_dc = ds_dq * dq_dc\n        \n        # dg/dc = d/dc [(1-c)sqrt(s)] = -sqrt(s) + (1-c) * (1/(2*sqrt(s))) * ds/dc\n        # Handle s=0 (which implies s_sqrt=0)\n        s_sqrt_safe = np.where(s_sqrt < 1e-15, np.sign(s_sqrt)*1e-15, s_sqrt)\n        dg_dc = -s_sqrt + (1.0 - c) * (ds_dc / (2.0 * s_sqrt_safe))\n        \n        # Compute A[g]\n        g_hat = fftn(g)\n        A_g_hat = g_hat * A_mult\n        A_g = np.real(ifftn(A_g_hat))\n        \n        # Compute A[dg/dc]\n        dg_c_hat = fftn(dg_dc)\n        A_dg_c_hat = dg_c_hat * A_mult\n        A_dg_c = np.real(ifftn(A_dg_c_hat))\n        \n        # The functional is F = beta/2 * mean(g * A[g]) - h * mean(g)\n        # Variation: delta F = mean( (beta/2) * [ (delta g) A[g] + g (delta A[g]) ] ) - mean( h delta g )\n        # Here delta g = dg_dc * delta c\n        # So mu = beta/2 * mean( dg_dc * A[g] + g * A[dg_dc] ) - h * mean(dg_dc)\n        \n        term_mean_1 = np.mean(dg_dc * A_g)\n        term_mean_2 = np.mean(g * A_dg_c)\n        mu_val = (beta / 2.0) * (term_mean_1 + term_mean_2) - h * np.mean(dg_dc)\n        \n        mu_batch[b] = mu_val\n    \n    return mu_batch",
+      "code_sha256": "043cdfe2fc1ace823db9ac1fb5d2cbc6bd6f4d790960c0eb8d41a107f83093af",
+      "check": {
+        "passed": false,
+        "n_passed": 2,
+        "cases": [
+          {
+            "case": "mixed",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.4157658060430549,
+            "max_relative_directional_error": 2.5181288569307863,
+            "passed": false
+          },
+          {
+            "case": "self_energy_only",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.41628019500058144,
+            "max_relative_directional_error": 6.750845527922708,
+            "passed": false
+          },
+          {
+            "case": "applied_field_only",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.46692553104367107,
+            "max_relative_directional_error": 2.6880078417413404,
+            "passed": false
+          },
+          {
+            "case": "uniform",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.41643525002291426,
+            "max_relative_directional_error": 1.7294718918828727e-08,
+            "passed": true
+          },
+          {
+            "case": "zero_couplings",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.36619784898357466,
+            "max_relative_directional_error": 0.0,
+            "passed": true
+          }
+        ],
+        "feedback": "{'case': 'mixed', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.4157658060430549, 'max_relative_directional_error': 2.5181288569307863, 'passed': False}\n{'case': 'self_energy_only', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.41628019500058144, 'max_relative_directional_error': 6.750845527922708, 'passed': False}\n{'case': 'applied_field_only', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.46692553104367107, 'max_relative_directional_error': 2.6880078417413404, 'passed': False}"
+      },
+      "feedback": "{'case': 'mixed', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.4157658060430549, 'max_relative_directional_error': 2.5181288569307863, 'passed': False}\n{'case': 'self_energy_only', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.41628019500058144, 'max_relative_directional_error': 6.750845527922708, 'passed': False}\n{'case': 'applied_field_only', 'ok': True, 'error': None, 'stderr': '', 'seconds': 0.46692553104367107, 'max_relative_directional_error': 2.6880078417413404, 'passed': False}",
+      "passed": false,
+      "verifier_executions": 5,
+      "verifier_seconds": 2.0816046310937963
+    },
+    {
+      "arm": "adapter",
+      "seed": 2026260076,
+      "turn": 5,
+      "policy": "feedback",
+      "lineage_seed": 2026228400,
+      "prompt_tokens": 2288,
+      "completion_tokens": 3385,
+      "latency_s": 123.45496878199992,
+      "finish_reason": "stop",
+      "messages_sha256": "6ce81b0472dd3a56c6b4917611c767b92f00641e587b4f26b1f55acb2037bb39",
+      "content": "import numpy as np\nfrom numpy.fft import fftfreq, fftn, ifftn\n\ndef solver(c_batch, T, beta, h, Tc_a, Tc_b, width, dx, dy):\n    B, Nx, Ny = c_batch.shape\n    mu_batch = np.zeros_like(c_batch, dtype=np.float64)\n    \n    # Precompute wave numbers\n    kx = 2 * np.pi * fftfreq(Nx, d=dx)\n    ky = 2 * np.pi * fftfreq(Ny, d=dy)\n    \n    # Create meshgrid for 2D k-space\n    KX, KY = np.meshgrid(kx, ky, indexing='ij')\n    \n    # Compute the Fourier multiplier: A_hat = kx^2 / (kx^2 + ky^2)\n    # Set to zero at zero wavevector.\n    denom = KX**2 + KY**2\n    A_mult = np.zeros_like(KX, dtype=np.float64)\n    # Avoid division by zero at (0,0)\n    mask = denom > 1e-15\n    A_mult[mask] = KX[mask]**2 / denom[mask]\n    # Ensure (0,0) is exactly zero\n    A_mult[0, 0] = 0.0\n    \n    Tc_diff = Tc_b - Tc_a\n\n    for b in range(B):\n        c = c_batch[b]\n        \n        # Compute Tc(c)\n        Tc_c = Tc_a + Tc_diff * c\n        \n        # Compute q = 1 - T / Tc(c)\n        # Handle Tc_c near 0 to avoid inf/nan\n        Tc_c_safe = np.where(np.abs(Tc_c) < 1e-15, np.sign(Tc_c) * 1e-15, Tc_c)\n        q = 1.0 - T / Tc_c_safe\n        \n        # Compute s = (q + sqrt(q*q + width*width)) / 2\n        term_sq = q*q + width*width\n        term_sq_safe = np.maximum(term_sq, 0.0)\n        s = (q + np.sqrt(term_sq_safe)) / 2.0\n        \n        # Compute g = (1 - c) * sqrt(s)\n        s_sqrt = np.sqrt(s)\n        g = (1.0 - c) * s_sqrt\n        \n        # Compute derivatives w.r.t c\n        \n        # dq/dc = -T * d(1/Tc_c)/dc = -T * (-Tc_diff / Tc_c^2) = T * Tc_diff / Tc_c^2\n        dq_dc = T * Tc_diff / (Tc_c_safe ** 2)\n        \n        # ds/dc = ds/dq * dq/dc\n        # s = (q + sqrt(q^2 + w^2))/2\n        # ds/dq = 0.5 * (1 + q / sqrt(q^2 + w^2))\n        term_sqrt = np.sqrt(term_sq_safe)\n        # If width > 0, term_sqrt >= width > 0.\n        # If width == 0, term_sqrt = |q|. If q=0, derivative is undefined in this form, but limit exists or we assume width>0.\n        # Assuming standard parameters where width > 0. If width=0 and q=0, s=0, ds/dq undefined.\n        # Let's compute carefully.\n        if width == 0:\n            # s = (q + |q|)/2. If q>=0, s=q -> ds/dq=1. If q<0, s=0 -> ds/dq=0.\n            # At q=0, subgradient [0,1]. Let's pick 1 for continuity from positive side or 0? \n            # Actually, if q=0, s=0. g = (1-c)*0 = 0. dg/dc might be sensitive.\n            # Let's assume width > 0 based on physical context (Ginzburg-Landau usually has positive parameter).\n            # If width=0, use the analytic limit or the piecewise definition.\n            # ds/dq = 0.5 * (1 + q/|q|) for q!=0. For q=0, let's use 1 (right derivative) or 0. \n            # Let's stick to the formula with term_sqrt, but add small epsilon if width=0? \n            # Problem says \"width\", likely > 0.\n            if width == 0:\n                ds_dq = np.where(q > 0, 1.0, np.where(q < 0, 0.0, 1.0)) # Arbitrary choice at 0, usually 1\n            else:\n                ds_dq = 0.5 * (1.0 + q / term_sqrt)\n        else:\n            ds_dq = 0.5 * (1.0 + q / term_sqrt)\n        \n        ds_dc = ds_dq * dq_dc\n        \n        # dg/dc = d/dc [(1-c)sqrt(s)] = -sqrt(s) + (1-c) * (1/(2*sqrt(s))) * ds/dc\n        # Handle s=0 (which implies s_sqrt=0)\n        s_sqrt_safe = np.where(s_sqrt < 1e-15, np.sign(s_sqrt)*1e-15, s_sqrt)\n        dg_dc = -s_sqrt + (1.0 - c) * (ds_dc / (2.0 * s_sqrt_safe))\n        \n        # The chemical potential mu is defined by dF/dc = mean(mu * delta c) ?? \n        # No, usually mu = delta F / delta c.\n        # The problem states: \"Return the chemical potential mu defined by delta F_mag = mean(mu * delta c)\"\n        # This implies F[c + dc] - F[c] = mean( mu * dc ) in the limit dc->0.\n        # So mu = delta F / delta c.\n        # F = < beta/2 * g * A[g] > - < h * g >\n        # Let's compute the functional derivative directly.\n        # F = beta/2 * < g, A[g] > - h < g >\n        # Variation: delta F = beta/2 * < delta g, A[g] > + beta/2 * < g, A[delta g] > - h < delta g >\n        # Note: A is self-adjoint (symmetric real eigenvalues in Fourier). <g, A[delta g]> = <A[g], delta g>.\n        # So delta F = < beta/2 * (A[g] + A[g]) * delta g > - h < delta g > ?\n        # Wait. <g, A[delta g]> = sum_g sum_k g_k^* A_k (delta g)_k.\n        # In real space: <g, A[delta g]> = integral g(x) * (A delta g)(x) dx.\n        # Since A is self-adjoint, <g, A[delta g]> = <A g, delta g> = integral (A g)(x) * delta g(x) dx.\n        # So delta F = < beta/2 * (A[g], delta g) + beta/2 * (A[g], delta g) > - h < delta g >\n        # = < beta * A[g] * delta g > - h < delta g >\n        # = mean( (beta * A[g] - h) * delta g )\n        # Thus mu = beta * A[g] - h.\n        \n        # Let's re-read carefully: \"delta F_mag = mean(mu * delta c)\"\n        # If this equality holds for any variation delta c, then mu is the functional derivative dF/dc.\n        # My derivation: delta F = mean( (beta * A[g] - h) * delta g ).\n        # But delta g = (dg/dc) * delta c.\n        # So delta F = mean( (beta * A[g] - h) * (dg/dc) * delta c ).\n        # Therefore, mu = (beta * A[g] - h) * (dg/dc).\n        \n        # Let's verify the chain rule.\n        # F[c] = Integral f(c) dx + Integral 1/2 (beta) g(c) A[g(c)] dx - Integral h g(c) dx.\n        # dF/dc = f'(c) + 1/2 beta [ g' A[g] + g A[g'] ] - h g'\n        # where ' denotes d/dc.\n        # So mu = dg/dc * (beta/2 A[g] + beta/2 A[g] ? No.)\n        # Term 1: d/dc (beta/2 <g, A[g]>) = beta/2 <g', A[g]> + beta/2 <g, A[g']>.\n        # Since A is linear and self-adjoint, <g, A[g']> = <A[g], g'>.\n        # So Term 1 = beta/2 <g' A[g] + A[g] g'> = <beta A[g] g'>? \n        # Wait. <u, v> = mean(u*v).\n        # <g', A[g]> = mean(g' * A[g]).\n        # <g, A[g']> = mean(g * A[g']).\n        # These are not necessarily equal unless g' = A[g']? No.\n        # But <g, A[g']> = <A[g], g'> is true.\n        # So Term 1 = beta/2 (mean(g' * A[g]) + mean(A[g] * g')) = beta * mean(g' * A[g]).\n        # So dF/dc = beta * mean(g' * A[g]) - h * mean(g') + ... wait, the mean is outside?\n        # The problem says delta F = mean( mu * delta c ). This implies mu is a field such that the integral of mu*dc equals the total change?\n        # Or is mu the local chemical potential? \"chemical potential mu defined by delta F_mag = mean(mu * delta c)\".\n        # If delta F is a scalar (total free energy change), and mean is spatial average, then:\n        # Delta F_total = sum_i mu_i * delta c_i * Volume?\n        # Usually F = sum f_i. Delta F = sum (df/dc) delta c.\n        # If F is defined as \"per grid cell\" average? \"magnetic free energy per grid cell is F_mag[c] = ... mean(...)\".\n        # So F_mag is a scalar (the average energy).\n        # Then \"delta F_mag = mean(mu * delta c)\" means the change in the scalar average energy is the average of mu*dc.\n        # So mu must be the functional derivative of the integrand?\n        # Let's assume mu is the field such that the variation of the scalar F is the mean of mu delta c.\n        # delta F = mean( (dF_int/dg) * dg ) = mean( (dF_int/dg) * (dg/dc) * dc ).\n        # So mu = (dF_int/dg) * (dg/dc).\n        # What is dF_int/dg?\n        # F_int = beta/2 * g * A[g] - h * g (pointwise? No, A is non-local).\n        # The term beta/2 * mean(g * A[g]) is non-local.\n        # Let's use the variation directly.\n        # delta F = beta/2 * mean( delta g * A[g] + g * A[delta g] ) - h * mean( delta g )\n        # = beta/2 * mean( delta g * A[g] ) + beta/2 * mean( g * A[delta g] ) - h * mean( delta g )\n        # Since mean(g * A[delta g]) = mean( A[g] * delta g ) (by self-adjointness of A),\n        # = beta/2 * mean( A[g] delta g ) + beta/2 * mean( A[g] delta g ) - h * mean( delta g )\n        # = mean( (beta * A[g] - h) * delta g )\n        # Substitute delta g = (dg/dc) * delta c:\n        # = mean( (beta * A[g] - h) * (dg/dc) * delta c )\n        # Comparing with mean( mu * delta c ), we get:\n        # mu = (beta * A[g] - h) * (dg/dc).\n        \n        # So the formula is mu = (beta * A[g] - h) * dg/dc.\n        \n        # Compute A[g]\n        g_hat = fftn(g)\n        A_g_hat = g_hat * A_mult\n        A_g = np.real(ifftn(A_g_hat))\n        \n        # Compute A[dg/dc] - actually we don't need A[dg/dc] if we use the simplified formula derived above.\n        # mu = (beta * A[g] - h) * dg_dc\n        # Let's double check the self-adjointness step.\n        # <g, A[delta g]> = sum_x g(x) (A delta g)(x).\n        # In Fourier: sum_k g_k^* A_k (delta g)_k.\n        # Since A_k are real (kx^2/(kx^2+ky^2)), A_k = A_k^*.\n        # Sum_k (A_k g_k)^* (delta g)_k = Sum_k (A g)_k^* (delta g)_k = <A g, delta g>.\n        # Yes, correct.\n        \n        # So mu = (beta * A[g] - h) * dg_dc\n        \n        # However, let's re-evaluate the \"mean\" definition.\n        # F_mag[c] = beta/2 * mean(g * A[g]) - h * mean(g).\n        # This is a scalar.\n        # Delta F = F[c+dc] - F[c] = mean( ... ) - mean( ... )\n        # = mean( delta( beta/2 g Ag - h g ) )\n        # = mean( beta/2 (delta g A g + g A delta g) - h delta g )\n        # = mean( beta/2 (delta g A g + A g delta g) - h delta g )  (since <g, A d g> = <A g, d g>)\n        # = mean( beta (A g) delta g - h delta g )\n        # = mean( (beta A g - h) delta g )\n        # = mean( (beta A g - h) (dg/dc) dc )\n        # So the quantity inside the mean is mu * dc.\n        # So mu = (beta * A[g] - h) * (dg/dc).\n        \n        # Implementation:\n        mu_field = (beta * A_g - h) * dg_dc\n        \n        # The problem asks for \"the chemical potential mu\". Is it the field or the scalar?\n        # \"Return a finite NumPy array with shape [B, Nx, Ny]\".\n        # So mu is the field.\n        \n        mu_batch[b] = mu_field\n    \n    return mu_batch",
+      "code": "import numpy as np\nfrom numpy.fft import fftfreq, fftn, ifftn\n\ndef solver(c_batch, T, beta, h, Tc_a, Tc_b, width, dx, dy):\n    B, Nx, Ny = c_batch.shape\n    mu_batch = np.zeros_like(c_batch, dtype=np.float64)\n    \n    # Precompute wave numbers\n    kx = 2 * np.pi * fftfreq(Nx, d=dx)\n    ky = 2 * np.pi * fftfreq(Ny, d=dy)\n    \n    # Create meshgrid for 2D k-space\n    KX, KY = np.meshgrid(kx, ky, indexing='ij')\n    \n    # Compute the Fourier multiplier: A_hat = kx^2 / (kx^2 + ky^2)\n    # Set to zero at zero wavevector.\n    denom = KX**2 + KY**2\n    A_mult = np.zeros_like(KX, dtype=np.float64)\n    # Avoid division by zero at (0,0)\n    mask = denom > 1e-15\n    A_mult[mask] = KX[mask]**2 / denom[mask]\n    # Ensure (0,0) is exactly zero\n    A_mult[0, 0] = 0.0\n    \n    Tc_diff = Tc_b - Tc_a\n\n    for b in range(B):\n        c = c_batch[b]\n        \n        # Compute Tc(c)\n        Tc_c = Tc_a + Tc_diff * c\n        \n        # Compute q = 1 - T / Tc(c)\n        # Handle Tc_c near 0 to avoid inf/nan\n        Tc_c_safe = np.where(np.abs(Tc_c) < 1e-15, np.sign(Tc_c) * 1e-15, Tc_c)\n        q = 1.0 - T / Tc_c_safe\n        \n        # Compute s = (q + sqrt(q*q + width*width)) / 2\n        term_sq = q*q + width*width\n        term_sq_safe = np.maximum(term_sq, 0.0)\n        s = (q + np.sqrt(term_sq_safe)) / 2.0\n        \n        # Compute g = (1 - c) * sqrt(s)\n        s_sqrt = np.sqrt(s)\n        g = (1.0 - c) * s_sqrt\n        \n        # Compute derivatives w.r.t c\n        \n        # dq/dc = -T * d(1/Tc_c)/dc = -T * (-Tc_diff / Tc_c^2) = T * Tc_diff / Tc_c^2\n        dq_dc = T * Tc_diff / (Tc_c_safe ** 2)\n        \n        # ds/dc = ds/dq * dq/dc\n        # s = (q + sqrt(q^2 + w^2))/2\n        # ds/dq = 0.5 * (1 + q / sqrt(q^2 + w^2))\n        term_sqrt = np.sqrt(term_sq_safe)\n        # If width > 0, term_sqrt >= width > 0.\n        # If width == 0, term_sqrt = |q|. If q=0, derivative is undefined in this form, but limit exists or we assume width>0.\n        # Assuming standard parameters where width > 0. If width=0 and q=0, s=0, ds/dq undefined.\n        # Let's compute carefully.\n        if width == 0:\n            # s = (q + |q|)/2. If q>=0, s=q -> ds/dq=1. If q<0, s=0 -> ds/dq=0.\n            # At q=0, subgradient [0,1]. Let's pick 1 for continuity from positive side or 0? \n            # Actually, if q=0, s=0. g = (1-c)*0 = 0. dg/dc might be sensitive.\n            # Let's assume width > 0 based on physical context (Ginzburg-Landau usually has positive parameter).\n            # If width=0, use the analytic limit or the piecewise definition.\n            # ds/dq = 0.5 * (1 + q/|q|) for q!=0. For q=0, let's use 1 (right derivative) or 0. \n            # Let's stick to the formula with term_sqrt, but add small epsilon if width=0? \n            # Problem says \"width\", likely > 0.\n            if width == 0:\n                ds_dq = np.where(q > 0, 1.0, np.where(q < 0, 0.0, 1.0)) # Arbitrary choice at 0, usually 1\n            else:\n                ds_dq = 0.5 * (1.0 + q / term_sqrt)\n        else:\n            ds_dq = 0.5 * (1.0 + q / term_sqrt)\n        \n        ds_dc = ds_dq * dq_dc\n        \n        # dg/dc = d/dc [(1-c)sqrt(s)] = -sqrt(s) + (1-c) * (1/(2*sqrt(s))) * ds/dc\n        # Handle s=0 (which implies s_sqrt=0)\n        s_sqrt_safe = np.where(s_sqrt < 1e-15, np.sign(s_sqrt)*1e-15, s_sqrt)\n        dg_dc = -s_sqrt + (1.0 - c) * (ds_dc / (2.0 * s_sqrt_safe))\n        \n        # The chemical potential mu is defined by dF/dc = mean(mu * delta c) ?? \n        # No, usually mu = delta F / delta c.\n        # The problem states: \"Return the chemical potential mu defined by delta F_mag = mean(mu * delta c)\"\n        # This implies F[c + dc] - F[c] = mean( mu * dc ) in the limit dc->0.\n        # So mu = delta F / delta c.\n        # F = < beta/2 * g * A[g] > - < h * g >\n        # Let's compute the functional derivative directly.\n        # F = beta/2 * < g, A[g] > - h < g >\n        # Variation: delta F = beta/2 * < delta g, A[g] > + beta/2 * < g, A[delta g] > - h < delta g >\n        # Note: A is self-adjoint (symmetric real eigenvalues in Fourier). <g, A[delta g]> = <A[g], delta g>.\n        # So delta F = < beta/2 * (A[g] + A[g]) * delta g > - h < delta g > ?\n        # Wait. <g, A[delta g]> = sum_g sum_k g_k^* A_k (delta g)_k.\n        # In real space: <g, A[delta g]> = integral g(x) * (A delta g)(x) dx.\n        # Since A is self-adjoint, <g, A[delta g]> = <A g, delta g> = integral (A g)(x) * delta g(x) dx.\n        # So delta F = < beta/2 * (A[g], delta g) + beta/2 * (A[g], delta g) > - h < delta g >\n        # = < beta * A[g] * delta g > - h < delta g >\n        # = mean( (beta * A[g] - h) * delta g )\n        # Thus mu = beta * A[g] - h.\n        \n        # Let's re-read carefully: \"delta F_mag = mean(mu * delta c)\"\n        # If this equality holds for any variation delta c, then mu is the functional derivative dF/dc.\n        # My derivation: delta F = mean( (beta * A[g] - h) * delta g ).\n        # But delta g = (dg/dc) * delta c.\n        # So delta F = mean( (beta * A[g] - h) * (dg/dc) * delta c ).\n        # Therefore, mu = (beta * A[g] - h) * (dg/dc).\n        \n        # Let's verify the chain rule.\n        # F[c] = Integral f(c) dx + Integral 1/2 (beta) g(c) A[g(c)] dx - Integral h g(c) dx.\n        # dF/dc = f'(c) + 1/2 beta [ g' A[g] + g A[g'] ] - h g'\n        # where ' denotes d/dc.\n        # So mu = dg/dc * (beta/2 A[g] + beta/2 A[g] ? No.)\n        # Term 1: d/dc (beta/2 <g, A[g]>) = beta/2 <g', A[g]> + beta/2 <g, A[g']>.\n        # Since A is linear and self-adjoint, <g, A[g']> = <A[g], g'>.\n        # So Term 1 = beta/2 <g' A[g] + A[g] g'> = <beta A[g] g'>? \n        # Wait. <u, v> = mean(u*v).\n        # <g', A[g]> = mean(g' * A[g]).\n        # <g, A[g']> = mean(g * A[g']).\n        # These are not necessarily equal unless g' = A[g']? No.\n        # But <g, A[g']> = <A[g], g'> is true.\n        # So Term 1 = beta/2 (mean(g' * A[g]) + mean(A[g] * g')) = beta * mean(g' * A[g]).\n        # So dF/dc = beta * mean(g' * A[g]) - h * mean(g') + ... wait, the mean is outside?\n        # The problem says delta F = mean( mu * delta c ). This implies mu is a field such that the integral of mu*dc equals the total change?\n        # Or is mu the local chemical potential? \"chemical potential mu defined by delta F_mag = mean(mu * delta c)\".\n        # If delta F is a scalar (total free energy change), and mean is spatial average, then:\n        # Delta F_total = sum_i mu_i * delta c_i * Volume?\n        # Usually F = sum f_i. Delta F = sum (df/dc) delta c.\n        # If F is defined as \"per grid cell\" average? \"magnetic free energy per grid cell is F_mag[c] = ... mean(...)\".\n        # So F_mag is a scalar (the average energy).\n        # Then \"delta F_mag = mean(mu * delta c)\" means the change in the scalar average energy is the average of mu*dc.\n        # So mu must be the functional derivative of the integrand?\n        # Let's assume mu is the field such that the variation of the scalar F is the mean of mu delta c.\n        # delta F = mean( (dF_int/dg) * dg ) = mean( (dF_int/dg) * (dg/dc) * dc ).\n        # So mu = (dF_int/dg) * (dg/dc).\n        # What is dF_int/dg?\n        # F_int = beta/2 * g * A[g] - h * g (pointwise? No, A is non-local).\n        # The term beta/2 * mean(g * A[g]) is non-local.\n        # Let's use the variation directly.\n        # delta F = beta/2 * mean( delta g * A[g] + g * A[delta g] ) - h * mean( delta g )\n        # = beta/2 * mean( delta g * A[g] ) + beta/2 * mean( g * A[delta g] ) - h * mean( delta g )\n        # Since mean(g * A[delta g]) = mean( A[g] * delta g ) (by self-adjointness of A),\n        # = beta/2 * mean( A[g] delta g ) + beta/2 * mean( A[g] delta g ) - h * mean( delta g )\n        # = mean( (beta * A[g] - h) * delta g )\n        # Substitute delta g = (dg/dc) * delta c:\n        # = mean( (beta * A[g] - h) * (dg/dc) * delta c )\n        # Comparing with mean( mu * delta c ), we get:\n        # mu = (beta * A[g] - h) * (dg/dc).\n        \n        # So the formula is mu = (beta * A[g] - h) * dg/dc.\n        \n        # Compute A[g]\n        g_hat = fftn(g)\n        A_g_hat = g_hat * A_mult\n        A_g = np.real(ifftn(A_g_hat))\n        \n        # Compute A[dg/dc] - actually we don't need A[dg/dc] if we use the simplified formula derived above.\n        # mu = (beta * A[g] - h) * dg_dc\n        # Let's double check the self-adjointness step.\n        # <g, A[delta g]> = sum_x g(x) (A delta g)(x).\n        # In Fourier: sum_k g_k^* A_k (delta g)_k.\n        # Since A_k are real (kx^2/(kx^2+ky^2)), A_k = A_k^*.\n        # Sum_k (A_k g_k)^* (delta g)_k = Sum_k (A g)_k^* (delta g)_k = <A g, delta g>.\n        # Yes, correct.\n        \n        # So mu = (beta * A[g] - h) * dg_dc\n        \n        # However, let's re-evaluate the \"mean\" definition.\n        # F_mag[c] = beta/2 * mean(g * A[g]) - h * mean(g).\n        # This is a scalar.\n        # Delta F = F[c+dc] - F[c] = mean( ... ) - mean( ... )\n        # = mean( delta( beta/2 g Ag - h g ) )\n        # = mean( beta/2 (delta g A g + g A delta g) - h delta g )\n        # = mean( beta/2 (delta g A g + A g delta g) - h delta g )  (since <g, A d g> = <A g, d g>)\n        # = mean( beta (A g) delta g - h delta g )\n        # = mean( (beta A g - h) delta g )\n        # = mean( (beta A g - h) (dg/dc) dc )\n        # So the quantity inside the mean is mu * dc.\n        # So mu = (beta * A[g] - h) * (dg/dc).\n        \n        # Implementation:\n        mu_field = (beta * A_g - h) * dg_dc\n        \n        # The problem asks for \"the chemical potential mu\". Is it the field or the scalar?\n        # \"Return a finite NumPy array with shape [B, Nx, Ny]\".\n        # So mu is the field.\n        \n        mu_batch[b] = mu_field\n    \n    return mu_batch",
+      "code_sha256": "a0a1f8a6c73f7c525dbc0eca191526a19fc2f6f27f1707feaa0d786cfdf9f471",
+      "check": {
+        "passed": true,
+        "n_passed": 5,
+        "cases": [
+          {
+            "case": "mixed",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.41540723299840465,
+            "max_relative_directional_error": 1.2351337429759559e-07,
+            "passed": true
+          },
+          {
+            "case": "self_energy_only",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.46579411602579057,
+            "max_relative_directional_error": 1.3565466415420504e-06,
+            "passed": true
+          },
+          {
+            "case": "applied_field_only",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.415789907972794,
+            "max_relative_directional_error": 5.177193422982969e-08,
+            "passed": true
+          },
+          {
+            "case": "uniform",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.41609931900165975,
+            "max_relative_directional_error": 1.7294718918828727e-08,
+            "passed": true
+          },
+          {
+            "case": "zero_couplings",
+            "ok": true,
+            "error": null,
+            "stderr": "",
+            "seconds": 0.4655546229914762,
+            "max_relative_directional_error": 0.0,
+            "passed": true
+          }
+        ],
+        "feedback": "All checks passed."
+      },
+      "feedback": "All checks passed.",
+      "passed": true,
+      "verifier_executions": 5,
+      "verifier_seconds": 2.178645198990125
+    }
+  ],
+  "selected": {
+    "turn": 5,
+    "code_sha256": "a0a1f8a6c73f7c525dbc0eca191526a19fc2f6f27f1707feaa0d786cfdf9f471"
+  }
+}
