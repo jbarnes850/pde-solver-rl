@@ -112,7 +112,7 @@ results; the simulations and the model evaluation need one GPU.
 | `pipeline/` | Case generation, curriculum, launch, monitoring, evaluation and statistics (`offline/` and the evaluation folders), and the analyses behind the reported figures (`analysis/`). See `pipeline/README.md`. |
 | `prompts/` | The system prompt used in training and evaluation, and the per-family grid conventions appended to problem statements. |
 | `containers/solver.Dockerfile` | Solver sandbox image (Python 3.12, NumPy 2.5.2, SciPy 1.17.0). |
-| `materials/` | The materials decision study: simulator and solver tasks (`rlvpm/`), experiments, analyses and figures (`scripts/`), and the saved results they read (`data/`). See `materials/README.md`. |
+| `materials/` | The materials decision study: the simulator and solver tasks (`magnet/`), one script per result named by stage (`scripts/simulate_*`, `analyze_*`, `figures.py`, ...), and the saved results they read (`data/`). See `materials/README.md`. |
 
 ## Reproduction
 

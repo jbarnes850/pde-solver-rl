@@ -1,7 +1,7 @@
 """Paired step-size check for the decision map: uniform h = 0.25 against the map's h = 1 field stage.
 
 Same mobility x0.5 specimens (701, 702, 801, 802) and three Curie offsets, run once with the map's
-two-stage step cap and once at uniform h = 0.25 (onset_route_map.py --h-max 0.25 --h-aging 0.25
+two-stage step cap and once at uniform h = 0.25 (simulate_decision_map.py --h-max 0.25 --h-aging 0.25
 --t-starts 929 for the fast ramp and the 929 K start). Reports the final-utility difference, uniform
 minus map, with its standard error over the 12 paired members. The fast ramp's +1.5 is the bias that
 the decision analysis corrects for with --ramp-adjust 1.5 and 3.
